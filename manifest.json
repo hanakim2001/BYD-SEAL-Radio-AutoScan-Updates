@@ -1,7 +1,7 @@
 {
-  "versionCode": 110,
-  "versionName": "01.10",
+  "versionCode": 109,
+  "versionName": "01.09",
   "apkUrl": "https://github.com/hanakim2001/BYD-SEAL-Radio-AutoScan-Updates/raw/main/BYD_SEAL_AUDIO_V01.10.apk",
   "sha256": "939e262e21ff4e2113f18a6ea572fa04074aac5cebc48730147955561730ec38",
-  "releaseNotes": "V01.10 실차 검증 후보. 확정 UI 반영, Music/Radio 통합 유지, Bluetooth 상태 분리, 차량 진단 수집 보강, Radio 권한 거부 반복 로그 억제."
+  "releaseNotes": "V01.10 배포를 일시 회수했습니다. 실차에서 확인된 UI/업데이트 문제를 수정하고 재검증한 뒤 다시 공개합니다."
 }
