@@ -1,7 +1,7 @@
 {
-  "versionCode": 109,
-  "versionName": "01.09",
-  "apkUrl": "https://github.com/hanakim2001/BYD-SEAL-Radio-AutoScan-Updates/raw/main/BYD_SEAL_AUDIO_V01.10.apk",
-  "sha256": "939e262e21ff4e2113f18a6ea572fa04074aac5cebc48730147955561730ec38",
-  "releaseNotes": "V01.10 배포를 일시 회수했습니다. 실차에서 확인된 UI/업데이트 문제를 수정하고 재검증한 뒤 다시 공개합니다."
+  "versionCode": 111,
+  "versionName": "01.11",
+  "apkUrl": "https://github.com/hanakim2001/BYD-SEAL-Radio-AutoScan-Updates/raw/main/BYD_SEAL_AUDIO_V01.11.apk",
+  "sha256": "59e8b4eaa8e7b68ec4c9daabc65c281d5fe92c4d66e1cbda94b23d454e6e7e43",
+  "releaseNotes": "V01.11 실차 수동 업데이트 테스트 후보입니다. BYD Android 10의 V2-only APK signer 조회 제한을 보완하고, SHA-256/패키지명/versionCode 검증 후 Android 기본 설치 관리자로 넘겨 최종 서명 연속성을 확인합니다. 무인/자동 설치는 하지 않습니다."
 }
