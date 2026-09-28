@@ -1,7 +1,7 @@
 {
-  "versionCode": 113,
-  "versionName": "01.13",
-  "apkUrl": "https://github.com/hanakim2001/BYD-SEAL-Radio-AutoScan-Updates/raw/main/BYD_SEAL_AUDIO_V01.13.apk",
-  "sha256": "b9e7839f0a08a51e5b872e59f3a214582b337323abebdbd3c17beab7dd8d1d34",
-  "releaseNotes": "V01.13 실차 검증 후보입니다. 앱의 업데이트/새소식 메뉴에서 새 버전을 감지하고 APK를 내려받은 뒤 Android 기본 설치 관리자로 넘겨 기존 BYD SEAL AUDIO 위에 업데이트 설치합니다. 앱 삭제 없이 진행하며 자동/무인 설치는 하지 않습니다. 이번 버전은 UI/HOUSE 보강, Music/Vehicle 배선 정리, 실차 타임스탬프 마커와 V02.01 전환용 로그 수집 기능을 포함합니다."
+  "versionCode": 114,
+  "versionName": "01.13.1",
+  "apkUrl": "https://github.com/hanakim2001/BYD-SEAL-Radio-AutoScan-Updates/raw/main/BYD_SEAL_AUDIO_V01.13.1.apk",
+  "sha256": "a66033d1e784cc5e3f258d56ec05f6e955c20f2ccaeb38dd4a5659aababc03ec",
+  "releaseNotes": "V01.13.1 긴급 실행 안정화 수정판입니다. V01.13에서 실차 실행 직후 종료되는 문제에 대응해 진단/재생/차량 텔레메트리 초기화를 fail-open으로 보호했습니다. 확정 UI 구조는 유지합니다."
 }
