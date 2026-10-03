@@ -1,7 +1,7 @@
 {
-  "versionCode": 114,
-  "versionName": "01.13.1",
-  "apkUrl": "https://github.com/hanakim2001/BYD-SEAL-Radio-AutoScan-Updates/raw/main/BYD_SEAL_AUDIO_V01.13.1.apk",
-  "sha256": "a66033d1e784cc5e3f258d56ec05f6e955c20f2ccaeb38dd4a5659aababc03ec",
-  "releaseNotes": "V01.13.1 긴급 실행 안정화 수정판입니다. V01.13에서 실차 실행 직후 종료되는 문제에 대응해 진단/재생/차량 텔레메트리 초기화를 fail-open으로 보호했습니다. 확정 UI 구조는 유지합니다."
+  "versionCode": 202,
+  "versionName": "02.02",
+  "apkUrl": "https://raw.githubusercontent.com/hanakim2001/BYD-SEAL-Radio-AutoScan-Updates/main/BYD_SEAL_AUDIO_V02.02.apk",
+  "sha256": "ada80ef5523d0998194f9c15466524b287ffa99b4cb9b107118ad46b46e2b632",
+  "releaseNotes": "V02.02 실차 테스트 후보: 확정 6분할 UI, 계절형 일일 앨범아트, Radio Auto Scan/저장채널 튜닝, 계기판 음악정보 쓰기, HUD 길안내 쓰기, BYD TMAP 연동 및 차량 데이터 배선을 포함합니다. 실차에서 동작하지 않는 항목은 로그 기반으로 즉시 보정합니다."
 }
