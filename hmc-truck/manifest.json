@@ -1,7 +1,7 @@
 {
   "versionName": "3.4.1",
-  "versionCode": 305,
+  "versionCode": 306,
   "apkUrl": "https://raw.githubusercontent.com/hanakim2001/BYD-SEAL-Radio-AutoScan-Updates/main/hmc-truck/HMC_Truck_Sequence_Feeding_latest.apk",
-  "sha256": "d69c7192dd47faefe80afe68065f6285f14fbe735571d44f89a11c06a82ea6f7",
+  "sha256": "bb3609069429aa7a89e786658f4362d24aed63d899ce03bbf6d93d7ba1420497",
   "notes": "V03.04.1 FIELD TEST - 실행 후 관리자 모드의 운영 로그 공유로 실기기 결과를 전달해 주세요."
 }
