@@ -1,7 +1,7 @@
 {
-  "versionCode": 202,
+  "versionCode": 204,
   "versionName": "02.02",
   "apkUrl": "https://raw.githubusercontent.com/hanakim2001/BYD-SEAL-Radio-AutoScan-Updates/main/BYD_SEAL_AUDIO_V02.02.apk",
-  "sha256": "ada80ef5523d0998194f9c15466524b287ffa99b4cb9b107118ad46b46e2b632",
-  "releaseNotes": "V02.02 실차 테스트 후보: 확정 6분할 UI, 계절형 일일 앨범아트, Radio Auto Scan/저장채널 튜닝, 계기판 음악정보 쓰기, HUD 길안내 쓰기, BYD TMAP 연동 및 차량 데이터 배선을 포함합니다. 실차에서 동작하지 않는 항목은 로그 기반으로 즉시 보정합니다."
+  "sha256": "247eaa796b2cf0f952718ff94407fc8a3e2a8887cff18c6fbdb1f16071b6eb3a",
+  "releaseNotes": "V02.02 code204 실차 수정 후보: 확정 UI 실제 런처 경로 교체, 차량정보 확장/축소 대칭 토글 및 pane 상태 복구, localhost ADB 기반 shell sidecar 자동기동, HUD/계기판 곡명/차량데이터/OEM 라디오 미러 배선 보강을 포함합니다."
 }
