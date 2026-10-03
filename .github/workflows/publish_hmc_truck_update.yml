@@ -1,0 +1,99 @@
+name: Publish HMC Truck in-app update
+
+on:
+  push:
+    branches:
+      - main
+    paths:
+      - hmc-truck/PUBLISH_TRIGGER.json
+
+permissions:
+  contents: write
+
+concurrency:
+  group: hmc-truck-update-publish
+  cancel-in-progress: false
+
+jobs:
+  publish:
+    if: ${{ github.actor != 'github-actions[bot]' }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 1
+
+      - name: Read publish trigger
+        id: trigger
+        shell: bash
+        run: |
+          set -euo pipefail
+          test -s hmc-truck/PUBLISH_TRIGGER.json
+          python3 - <<'PY' >> "$GITHUB_OUTPUT"
+          import json
+          from pathlib import Path
+          data=json.loads(Path("hmc-truck/PUBLISH_TRIGGER.json").read_text())
+          required=["artifactUrl","sha256","versionName","versionCode"]
+          missing=[k for k in required if not data.get(k)]
+          if missing:
+              raise SystemExit("missing trigger keys: "+",".join(missing))
+          print("url="+data["artifactUrl"])
+          print("sha="+data["sha256"].lower())
+          print("version_name="+str(data["versionName"]))
+          print("version_code="+str(data["versionCode"]))
+          PY
+
+      - name: Download and verify APK
+        shell: bash
+        env:
+          ARTIFACT_URL: ${{ steps.trigger.outputs.url }}
+          EXPECTED_SHA: ${{ steps.trigger.outputs.sha }}
+        run: |
+          set -euo pipefail
+          curl --fail --location --retry 2 "$ARTIFACT_URL" -o /tmp/hmc-artifact.zip
+          rm -rf /tmp/hmc-artifact && mkdir -p /tmp/hmc-artifact
+          unzip -q /tmp/hmc-artifact.zip -d /tmp/hmc-artifact
+          APK="$(find /tmp/hmc-artifact -type f -name '*.apk' -print -quit)"
+          test -n "$APK" && test -s "$APK"
+          ACTUAL_SHA="$(sha256sum "$APK" | awk '{print $1}')"
+          [ "$ACTUAL_SHA" = "$EXPECTED_SHA" ] || {
+            echo "SHA256 mismatch: expected=$EXPECTED_SHA actual=$ACTUAL_SHA"
+            exit 1
+          }
+          cp "$APK" hmc-truck/HMC_Truck_Sequence_Feeding_latest.apk
+
+      - name: Update manifest
+        shell: bash
+        env:
+          VERSION_NAME: ${{ steps.trigger.outputs.version_name }}
+          VERSION_CODE: ${{ steps.trigger.outputs.version_code }}
+          EXPECTED_SHA: ${{ steps.trigger.outputs.sha }}
+        run: |
+          set -euo pipefail
+          python3 - <<'PY'
+          import json, os
+          from pathlib import Path
+          manifest={
+            "versionName": os.environ["VERSION_NAME"],
+            "versionCode": int(os.environ["VERSION_CODE"]),
+            "apkUrl": "https://raw.githubusercontent.com/hanakim2001/BYD-SEAL-Radio-AutoScan-Updates/main/hmc-truck/HMC_Truck_Sequence_Feeding_latest.apk",
+            "sha256": os.environ["EXPECTED_SHA"],
+            "notes": "V03.04.1 FIELD TEST - 실행 후 관리자 모드의 운영 로그 공유로 실기기 결과를 전달해 주세요."
+          }
+          Path("hmc-truck/manifest.json").write_text(
+              json.dumps(manifest, ensure_ascii=False, indent=2)+"\n",
+              encoding="utf-8",
+          )
+          PY
+          rm -f hmc-truck/PUBLISH_TRIGGER.json
+
+      - name: Commit published update
+        shell: bash
+        run: |
+          set -euo pipefail
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add hmc-truck/HMC_Truck_Sequence_Feeding_latest.apk hmc-truck/manifest.json hmc-truck/PUBLISH_TRIGGER.json
+          git commit -m "publish(hmc): V03.04.1 in-app update"
+          git push origin HEAD:main
