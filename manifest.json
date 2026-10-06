@@ -1,7 +1,7 @@
 {
-  "versionCode": 209,
+  "versionCode": 210,
   "versionName": "02.02",
   "apkUrl": "https://raw.githubusercontent.com/hanakim2001/BYD-SEAL-Radio-AutoScan-Updates/main/BYD_SEAL_AUDIO_V02.02.apk",
-  "sha256": "ce5f734e239dfb82d044727b8062162ee45be95c7574740e82c51564eee2680d",
-  "releaseNotes": "V02.02 code209 통합 실차 후보: 확정 6개 분할 UI, 차량 read-only 동적정보/주행모드·기어위치·TPMS·ODO·READY·충전정보, OEM Radio 검색·튜닝·미러, Cluster/HUD/방향지시등 카메라 후보, OTT/Web, 차내 수동 업데이트, 차량 탑뷰 도어·후드·트렁크 표시, 주행중 주행가능거리/주행후 이번주행 거리·시간 primary 전환."
+  "sha256": "30f3f321f43f5547df9b6335dc4f8f7cf3a8e2c74950e4de81eb5b7680721d78",
+  "releaseNotes": "V02.02 code210 Radio Core 1차 실차 후보: OEM 현재 주파수/상태 live mirror, 라디오 핵심 API 준비상태 진단, auto-search 시작/취소, 검색결과 저장, 저장채널/즐겨찾기, 저장채널 tune+read-back 검증 경로 강화. 차량 read-only, HUD/Cluster 배선, 확정 UI, 차내 수동 업데이트 유지."
 }
