@@ -1,7 +1,7 @@
 {
-  "versionCode": 211,
+  "versionCode": 212,
   "versionName": "02.02",
   "apkUrl": "https://raw.githubusercontent.com/hanakim2001/BYD-SEAL-Radio-AutoScan-Updates/main/BYD_SEAL_AUDIO_V02.02.apk",
-  "sha256": "6f85755c76810a2928644ebe9f2a6aac57ca1a3c67bc098db63cc4e6ac951719",
-  "releaseNotes": "V02.02 code211 UI 실차 확인 후보: Main/Music/Radio/System/OTT/Web UI 정합성 개선, 차내 수동 업데이트 경로 유지."
+  "sha256": "69d6936f0ed3ac7e32a70fe846f36679585d051ce0c4d3f99b1fde7a7f4ea060",
+  "releaseNotes": "V02.02 code212 P0 startup recovery: restored map layout no longer auto-launches over the app at startup; sidecar recovery, cluster media retry, and turn-camera wiring included."
 }
