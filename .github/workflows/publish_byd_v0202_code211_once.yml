@@ -1,10 +1,10 @@
-name: Publish BYD V02.02 code211 once
+name: Publish BYD V02.02 code213 once
 
 on:
   push:
     branches: [ main ]
     paths:
-      - '.github/publish-v0202-code211-trigger'
+      - '.github/publish-v0202-code213-trigger'
 
 permissions:
   contents: write
@@ -16,36 +16,36 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
-      - name: Fetch verified code211 artifact
+      - name: Fetch verified code213 artifact
         env:
-          ARTIFACT_URL: "https://sdmntprseasia.oaiusercontent.com/files/00000000-f220-8207-ac1a-1a02075f4c3f/raw?se=2026-10-07T12%3A49%3A01Z&sp=r&sv=2026-02-06&sr=b&scid=6471f245-67d4-5b28-b6ca-9939a3b874d6&skoid=b1bca990-dcac-4c31-8ca1-ac563cf24c54&sktid=a48cca56-e6da-484e-a814-9c849652bcb3&skt=2026-10-07T00%3A59%3A45Z&ske=2026-10-08T00%3A59%3A45Z&sks=b&skv=2026-02-06&sig=q48CkRm/d6Nh/wmZ2LPsldGdRtfsXsnMna24fpJlRhM%3D"
+          ARTIFACT_URL: "https://sdmntprcacentral.oaiusercontent.com/files/00000000-9b6c-820d-9e39-f5c8173bf045/raw?se=2026-10-09T11%3A55%3A07Z&sp=r&sv=2026-02-06&sr=b&scid=1a2973cf-4b00-597d-9279-d876a4206f6a&skoid=b1bca990-dcac-4c31-8ca1-ac563cf24c54&sktid=a48cca56-e6da-484e-a814-9c849652bcb3&skt=2026-10-09T01%3A38%3A05Z&ske=2026-10-10T01%3A38%3A05Z&sks=b&skv=2026-02-06&sig=Cyg/3pWOgjkap7WLXyoh8DOGai522IuTL640IPT8B/M%3D"
         run: |
           set -euo pipefail
-          curl -fL "$ARTIFACT_URL" -o /tmp/code211-artifact.zip
-          rm -rf /tmp/code211-outer /tmp/code211-pkg
-          mkdir -p /tmp/code211-outer /tmp/code211-pkg
-          unzip -q /tmp/code211-artifact.zip -d /tmp/code211-outer
-          PKG="$(find /tmp/code211-outer -type f -name 'BYD_SEAL_AUDIO_V02.02_TEST_PACKAGE.zip' | head -n 1)"
+          curl -fL "$ARTIFACT_URL" -o /tmp/code213-artifact.zip
+          rm -rf /tmp/code213-outer /tmp/code213-pkg
+          mkdir -p /tmp/code213-outer /tmp/code213-pkg
+          unzip -q /tmp/code213-artifact.zip -d /tmp/code213-outer
+          PKG="$(find /tmp/code213-outer -type f -name 'BYD_SEAL_AUDIO_V02.02_TEST_PACKAGE.zip' | head -n 1)"
           test -n "$PKG"
-          unzip -q "$PKG" -d /tmp/code211-pkg
-          test -s /tmp/code211-pkg/BYD_SEAL_AUDIO_V02.02.apk
-          echo "6f85755c76810a2928644ebe9f2a6aac57ca1a3c67bc098db63cc4e6ac951719  /tmp/code211-pkg/BYD_SEAL_AUDIO_V02.02.apk" | sha256sum -c -
+          unzip -q "$PKG" -d /tmp/code213-pkg
+          test -s /tmp/code213-pkg/BYD_SEAL_AUDIO_V02.02.apk
+          echo "33fcedc0125ed1092c64d8121e4164198f0681e1823412b59630a121f6368b06  /tmp/code213-pkg/BYD_SEAL_AUDIO_V02.02.apk" | sha256sum -c -
 
       - name: Publish APK and coherent manifest
         run: |
           set -euo pipefail
-          cp /tmp/code211-pkg/BYD_SEAL_AUDIO_V02.02.apk BYD_SEAL_AUDIO_V02.02.apk
+          cp /tmp/code213-pkg/BYD_SEAL_AUDIO_V02.02.apk BYD_SEAL_AUDIO_V02.02.apk
           cat > manifest.json <<'EOF'
           {
-            "versionCode": 211,
+            "versionCode": 213,
             "versionName": "02.02",
             "apkUrl": "https://raw.githubusercontent.com/hanakim2001/BYD-SEAL-Radio-AutoScan-Updates/main/BYD_SEAL_AUDIO_V02.02.apk",
-            "sha256": "6f85755c76810a2928644ebe9f2a6aac57ca1a3c67bc098db63cc4e6ac951719",
-            "releaseNotes": "V02.02 code211 UI 실차 확인 후보: Main/Music/Radio/System/OTT/Web UI 정합성 개선, 차내 수동 업데이트 경로 유지."
+            "sha256": "33fcedc0125ed1092c64d8121e4164198f0681e1823412b59630a121f6368b06",
+            "releaseNotes": "V02.02 code213 closing candidate: confirmed UI regression fixes, TPMS PSI stability, Radio wiring, bounded OEM MediaCenter/AutoSplit/WHUD/Cluster probes, in-vehicle manual update retained."
           }
           EOF
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
           git add BYD_SEAL_AUDIO_V02.02.apk manifest.json
-          git diff --cached --quiet || git commit -m "Publish BYD SEAL AUDIO V02.02 code211 UI candidate [skip ci]"
+          git diff --cached --quiet || git commit -m "Publish BYD SEAL AUDIO V02.02 code213 closing candidate [skip ci]"
           git push origin HEAD:main
