@@ -1,7 +1,7 @@
 {
-  "versionCode": 212,
+  "versionCode": 213,
   "versionName": "02.02",
   "apkUrl": "https://raw.githubusercontent.com/hanakim2001/BYD-SEAL-Radio-AutoScan-Updates/main/BYD_SEAL_AUDIO_V02.02.apk",
-  "sha256": "69d6936f0ed3ac7e32a70fe846f36679585d051ce0c4d3f99b1fde7a7f4ea060",
-  "releaseNotes": "V02.02 code212 P0 startup recovery: restored map layout no longer auto-launches over the app at startup; sidecar recovery, cluster media retry, and turn-camera wiring included."
+  "sha256": "33fcedc0125ed1092c64d8121e4164198f0681e1823412b59630a121f6368b06",
+  "releaseNotes": "V02.02 code213 closing candidate: confirmed UI regression fixes, TPMS PSI stability, Radio wiring, bounded OEM MediaCenter/AutoSplit/WHUD/Cluster probes, in-vehicle manual update retained."
 }
