@@ -1,8 +1,0 @@
-{
-  "artifactUrl": "https://sdmntprwestus.oaiusercontent.com/files/00000000-a044-8230-a596-733b01bbdac2/raw?se=2026-10-15T07%3A49%3A05Z&sp=r&sv=2026-02-06&sr=b&scid=ff021d84-9d2f-4dba-906c-6f475147cd06&skoid=b1bca990-dcac-4c31-8ca1-ac563cf24c54&sktid=a48cca56-e6da-484e-a814-9c849652bcb3&skt=2026-10-14T22%3A39%3A14Z&ske=2026-10-15T22%3A39%3A14Z&sks=b&skv=2026-02-06&sig=QRh08CbHrG7pbH9MXISYBwmvZbGI6N1Ukjj%2BHKWhMxc%3D",
-  "sha256": "fcc35e76eced5517fa1d1d82d944f148733853da083aab00b1d5cc71e402f9db",
-  "versionName": "3.4.1",
-  "versionCode": 314,
-  "sourceCommit": "89459e8fb17afa04438f052811da9396d1ec16a0",
-  "sourceRunId": 38691710910
-}
