@@ -1,0 +1,50 @@
+name: Publish BYD V02.02 code214 in-app update once
+on:
+  push:
+    branches: [main]
+    paths: ['.github/publish-v0202-code214-trigger']
+permissions:
+  contents: write
+jobs:
+  publish:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: true
+      - name: Retrieve verified code214 candidate
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          set -euo pipefail
+          test "$(cat .github/publish-v0202-code214-trigger)" = "38873876246:12033938684:code214"
+          curl -fLsS -H "Accept: application/vnd.github+json" -H "Authorization: Bearer $GH_TOKEN" \
+            "https://api.github.com/repos/hanakim2001/BYD-SEAL-Radio-AutoScan/actions/artifacts/12033938684/zip" \
+            -o /tmp/code214.zip
+          mkdir -p /tmp/code214
+          unzip -q /tmp/code214.zip -d /tmp/code214
+          test -s /tmp/code214/BYD_SEAL_AUDIO_V02.02_code214_TEST.apk
+          echo "f9ad7c02be468627a78372251f257ce766f52853bcf4bece5c3afb6e1cf2b7b3  /tmp/code214/BYD_SEAL_AUDIO_V02.02_code214_TEST.apk" | sha256sum -c -
+          grep -q "versionCode='214'" /tmp/code214/package.txt
+          grep -q "name='com.seunghyun.bydradioautoscan'" /tmp/code214/package.txt
+          grep -qi 'Verified using v2 scheme (APK Signature Scheme v2): true' /tmp/code214/signing.txt
+          grep -qi 'cf00d495e6a69f32e8908ca294584a480a4404db80cedfe43ba7df5cb7a695b7' /tmp/code214/signing.txt
+      - name: Publish verified update and manifest
+        run: |
+          set -euo pipefail
+          cp /tmp/code214/BYD_SEAL_AUDIO_V02.02_code214_TEST.apk BYD_SEAL_AUDIO_V02.02.apk
+          cat > manifest.json <<'EOF'
+          {
+            "versionCode": 214,
+            "versionName": "02.02",
+            "apkUrl": "https://raw.githubusercontent.com/hanakim2001/BYD-SEAL-Radio-AutoScan-Updates/main/BYD_SEAL_AUDIO_V02.02.apk",
+            "sha256": "f9ad7c02be468627a78372251f257ce766f52853bcf4bece5c3afb6e1cf2b7b3",
+            "releaseNotes": "V02.02 code214 real-car diagnostic candidate: updated home and slim SEAL top-view, OTT layout, split/restore, radio and vehicle/TPMS wiring, HUD and turn-camera diagnostics. Test only."
+          }
+          EOF
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add BYD_SEAL_AUDIO_V02.02.apk manifest.json
+          git diff --cached --quiet || git commit -m "Publish BYD SEAL AUDIO code214 in-app test update [skip ci]"
+          git push origin HEAD:main
