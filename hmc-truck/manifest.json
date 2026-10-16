@@ -1,7 +1,9 @@
 {
   "versionName": "3.4.1",
-  "versionCode": 315,
-  "apkUrl": "https://raw.githubusercontent.com/hanakim2001/BYD-SEAL-Radio-AutoScan-Updates/main/hmc-truck/HMC_Truck_Sequence_Feeding_latest.apk",
-  "sha256": "0930491ac48e68726faf31eab6a27fb7dd9e00a10db4c08a41f1ad94fe619b23",
-  "notes": "V03.04.1 FIELD TEST - 실행 후 관리자 모드의 운영 로그 공유로 실기기 결과를 전달해 주세요."
+  "versionCode": 316,
+  "apkUrl": "https://raw.githubusercontent.com/hanakim2001/BYD-SEAL-Radio-AutoScan-Updates/main/hmc-truck/HMC_Truck_Sequence_Feeding_code316_008a5ae7515f.apk",
+  "sha256": "008a5ae7515fd8f2bec118a97b38285514549270b6e06b6167618971a75bde21",
+  "sourceCommit": "c1597ce8d5b43b2cab6eb4f4285c310575e2e39e",
+  "signerCertificateSha256": "8a3441a39d2ca66e0c65bd31bcef6f61f2d84730277fa6abd43990f26babafe8",
+  "notes": "code316 FIELD TEST: 로그인 세션 복구·실제 Body 공정 목록 조회·기간 통계·검증된 ALC/품번 연결. 현장 확인이 필요합니다."
 }
