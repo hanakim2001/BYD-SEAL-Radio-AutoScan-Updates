@@ -133,14 +133,14 @@ jobs:
                     "sha256":trigger["sha256"].lower(),
                     "sourceCommit":trigger["sourceCommit"],
                     "signerCertificateSha256":trigger["expectedSignerCertificateSha256"].lower(),
-                    "notes":"code316 FIELD TEST: 로그인 세션 복구·실제 Body 공정 목록 조회·기간 통계·검증된 ALC/품번 연결. 현장 확인이 필요합니다."}
+                    "notes":"code317 FIELD TEST: 저장된 시작 Body·실제 JIS 순서 기반 투입예정시간, 조회기간 밖 기준 조회 및 미산출 사유. 서버 공통 저장·실기기 확인이 필요합니다."}
           path.write_text(json.dumps(manifest,ensure_ascii=False,indent=2)+"\n")
           Path("hmc-truck/PUBLISH_TRIGGER.json").unlink()
           PY
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
           git add hmc-truck/HMC_Truck_Sequence_Feeding_latest.apk hmc-truck/HMC_Truck_Sequence_Feeding_code*.apk hmc-truck/manifest.json hmc-truck/PUBLISH_TRIGGER.json
-          git commit -m "publish(hmc): verified code316 FIELD TEST in-app update"
+          git commit -m "publish(hmc): verified code317 FIELD TEST in-app update"
           git push origin HEAD:main
 
       - name: Remove temporary release transfers
