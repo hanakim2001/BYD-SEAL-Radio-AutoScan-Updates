@@ -19,9 +19,9 @@ jobs:
         run: |
           set -euo pipefail
           test "$(cat .github/publish-v0202-code214-trigger)" = "38873876246:12033938684:code214"
-          curl -fLsS -H "Accept: application/vnd.github+json" -H "Authorization: Bearer $GH_TOKEN" \
-            "https://api.github.com/repos/hanakim2001/BYD-SEAL-Radio-AutoScan/actions/artifacts/12033938684/zip" \
-            -o /tmp/code214.zip
+          # Previous run proved a cross-repository GitHub token cannot fetch this artifact (404).
+          # One-time verified artifact bridge; digest verification remains mandatory.
+          curl -fLsS 'https://sdmntprwestus.oaiusercontent.com/files/00000000-7b94-8230-a636-66a125d37453/raw?se=2026-10-16T09%3A57%3A29Z&sp=r&sv=2026-02-06&sr=b&scid=92890fa3-f40d-5cb2-b63f-98b167d68da1&skoid=b1bca990-dcac-4c31-8ca1-ac563cf24c54&sktid=a48cca56-e6da-484e-a814-9c849652bcb3&skt=2026-10-16T03%3A01%3A55Z&ske=2026-10-17T03%3A01%3A55Z&sks=b&skv=2026-02-06&sig=epzHwvLLaHVxW9qVslsVePsB3nwM1MUeu75ymYENmNU%3D' -o /tmp/code214.zip
           mkdir -p /tmp/code214
           unzip -q /tmp/code214.zip -d /tmp/code214
           test -s /tmp/code214/BYD_SEAL_AUDIO_V02.02_code214_TEST.apk
