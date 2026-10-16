@@ -2,10 +2,8 @@ name: Publish HMC Truck in-app update
 
 on:
   push:
-    branches:
-      - main
-    paths:
-      - hmc-truck/PUBLISH_TRIGGER.json
+    branches: [main]
+    paths: [hmc-truck/PUBLISH_TRIGGER.json]
 
 permissions:
   contents: write
@@ -24,76 +22,129 @@ jobs:
         with:
           fetch-depth: 1
 
-      - name: Read publish trigger
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '17'
+
+      - name: Validate exact source, signer and previous manifest
         id: trigger
         shell: bash
         run: |
           set -euo pipefail
-          test -s hmc-truck/PUBLISH_TRIGGER.json
           python3 - <<'PY' >> "$GITHUB_OUTPUT"
-          import json
+          import json, re
           from pathlib import Path
+          from urllib.parse import urlsplit
           data=json.loads(Path("hmc-truck/PUBLISH_TRIGGER.json").read_text())
-          required=["artifactUrl","sha256","versionName","versionCode"]
-          missing=[k for k in required if not data.get(k)]
-          if missing:
-              raise SystemExit("missing trigger keys: "+",".join(missing))
-          print("url="+data["artifactUrl"])
-          print("sha="+data["sha256"].lower())
-          print("version_name="+str(data["versionName"]))
-          print("version_code="+str(data["versionCode"]))
+          required=["artifactUrl","sha256","versionName","versionCode","sourceCommit",
+                    "expectedSignerCertificateSha256","previousVersionCode","previousSha256"]
+          assert all(data.get(k) for k in required), "Incomplete publish trigger"
+          url=urlsplit(data["artifactUrl"])
+          assert url.scheme=="https" and not url.username and not url.password and not url.fragment
+          assert url.hostname and url.hostname.endswith(".oaiusercontent.com"), "Unapproved artifact transfer host"
+          assert not any(c in data["artifactUrl"] for c in "\r\n"), "Invalid artifact URL"
+          for k in ["sha256","previousSha256","expectedSignerCertificateSha256"]:
+              assert re.fullmatch(r"[0-9a-fA-F]{64}",data[k]), "Invalid digest"
+          assert re.fullmatch(r"[0-9a-f]{40}",data["sourceCommit"]), "Invalid source SHA"
+          assert data["expectedSignerCertificateSha256"].lower()=="8a3441a39d2ca66e0c65bd31bcef6f61f2d84730277fa6abd43990f26babafe8", "Unapproved application signer"
+          manifest=json.loads(Path("hmc-truck/manifest.json").read_text())
+          assert manifest["versionCode"]==data["previousVersionCode"], "Previous version changed"
+          assert manifest["sha256"].lower()==data["previousSha256"].lower(), "Previous APK changed"
+          assert isinstance(data["versionCode"],int) and data["versionCode"]>manifest["versionCode"], "Rollback or same-version publication"
+          assert data["versionName"]=="3.4.1", "Unexpected version name"
+          outputs={"url":data["artifactUrl"],"sha":data["sha256"].lower(),
+                   "version_name":data["versionName"],"version_code":data["versionCode"],
+                   "source_commit":data["sourceCommit"],"signer":data["expectedSignerCertificateSha256"].lower(),
+                   "previous_version_code":data["previousVersionCode"],"previous_sha":data["previousSha256"].lower()}
+          for key,value in outputs.items(): print(str(key)+"="+str(value))
+          Path("/tmp/hmc-publish-trigger.json").write_text(json.dumps(data,sort_keys=True))
           PY
 
-      - name: Download and verify APK
+      - name: Download and verify APK, provenance, package and signature
         shell: bash
         env:
           ARTIFACT_URL: ${{ steps.trigger.outputs.url }}
           EXPECTED_SHA: ${{ steps.trigger.outputs.sha }}
+          EXPECTED_SOURCE: ${{ steps.trigger.outputs.source_commit }}
+          EXPECTED_SIGNER: ${{ steps.trigger.outputs.signer }}
+          VERSION_CODE: ${{ steps.trigger.outputs.version_code }}
+          VERSION_NAME: ${{ steps.trigger.outputs.version_name }}
         run: |
           set -euo pipefail
           curl --fail --location --retry 2 "$ARTIFACT_URL" -o /tmp/hmc-artifact.zip
-          rm -rf /tmp/hmc-artifact && mkdir -p /tmp/hmc-artifact
-          unzip -q /tmp/hmc-artifact.zip -d /tmp/hmc-artifact
-          APK="$(find /tmp/hmc-artifact -type f -name '*.apk' -print -quit)"
-          test -n "$APK" && test -s "$APK"
-          ACTUAL_SHA="$(sha256sum "$APK" | awk '{print $1}')"
-          [ "$ACTUAL_SHA" = "$EXPECTED_SHA" ] || {
-            echo "SHA256 mismatch: expected=$EXPECTED_SHA actual=$ACTUAL_SHA"
-            exit 1
-          }
-          cp "$APK" hmc-truck/HMC_Truck_Sequence_Feeding_latest.apk
-
-      - name: Update manifest
-        shell: bash
-        env:
-          VERSION_NAME: ${{ steps.trigger.outputs.version_name }}
-          VERSION_CODE: ${{ steps.trigger.outputs.version_code }}
-          EXPECTED_SHA: ${{ steps.trigger.outputs.sha }}
-        run: |
-          set -euo pipefail
           python3 - <<'PY'
-          import json, os
+          import hashlib,json,os,re,subprocess,zipfile
           from pathlib import Path
-          manifest={
-            "versionName": os.environ["VERSION_NAME"],
-            "versionCode": int(os.environ["VERSION_CODE"]),
-            "apkUrl": "https://raw.githubusercontent.com/hanakim2001/BYD-SEAL-Radio-AutoScan-Updates/main/hmc-truck/HMC_Truck_Sequence_Feeding_latest.apk",
-            "sha256": os.environ["EXPECTED_SHA"],
-            "notes": "V03.04.1 FIELD TEST - 실행 후 관리자 모드의 운영 로그 공유로 실기기 결과를 전달해 주세요."
-          }
-          Path("hmc-truck/manifest.json").write_text(
-              json.dumps(manifest, ensure_ascii=False, indent=2)+"\n",
-              encoding="utf-8",
-          )
+          with zipfile.ZipFile("/tmp/hmc-artifact.zip") as archive:
+              apks=[n for n in archive.namelist() if n.endswith(".apk")]
+              records=[n for n in archive.namelist() if n.endswith("V03.04.1_FIELD_TEST_PROVENANCE.json")]
+              assert len(apks)==1 and len(records)==1, "Ambiguous release artifact"
+              provenance=json.loads(archive.read(records[0]))
+              apk_bytes=archive.read(apks[0])
+          digest=hashlib.sha256(apk_bytes).hexdigest()
+          assert digest==os.environ["EXPECTED_SHA"]==provenance["apkSha256"], "APK digest mismatch"
+          assert provenance["sourceCommit"]==os.environ["EXPECTED_SOURCE"], "Source provenance mismatch"
+          assert provenance["versionCode"]==int(os.environ["VERSION_CODE"]), "Provenance version mismatch"
+          assert provenance["versionName"]==os.environ["VERSION_NAME"], "Provenance name mismatch"
+          assert provenance["applicationId"]=="com.seunghyun.hmc.truck_feeding"
+          assert provenance["target"]=="lib/main_stage5_field_demo.dart"
+          assert provenance["signerCertificateSha256"].lower()==os.environ["EXPECTED_SIGNER"]
+          apk=Path("/tmp/hmc-verified.apk"); apk.write_bytes(apk_bytes)
+          sdk=Path(os.environ.get("ANDROID_HOME") or os.environ["ANDROID_SDK_ROOT"])
+          tools=[p.parent for p in (sdk/"build-tools").glob("*/aapt") if (p.parent/"apksigner").is_file()]
+          assert tools, "Android signature verification tools unavailable"
+          tool=sorted(tools,key=lambda p:tuple(map(int,re.findall(r"\d+",p.name))))[-1]
+          badging=subprocess.run([str(tool/"aapt"),"dump","badging",str(apk)],check=True,capture_output=True,text=True).stdout
+          identity=re.search(r"package: name='([^']+)' versionCode='([^']+)' versionName='([^']+)'",badging)
+          assert identity and identity.groups()==("com.seunghyun.hmc.truck_feeding",os.environ["VERSION_CODE"],os.environ["VERSION_NAME"]), "APK identity mismatch"
+          signed=subprocess.run([str(tool/"apksigner"),"verify","--print-certs",str(apk)],check=True,capture_output=True,text=True).stdout
+          signer=re.search(r"certificate SHA-256 digest: ([0-9a-fA-F]+)",signed)
+          assert signer and signer.group(1).lower()==os.environ["EXPECTED_SIGNER"], "APK signing certificate mismatch"
+          print("Verified APK package, version, signature, source and SHA-256")
           PY
-          rm -f hmc-truck/PUBLISH_TRIGGER.json
 
-      - name: Commit published update
+      - name: Publish verified update without overwriting concurrent work
         shell: bash
         run: |
           set -euo pipefail
+          git fetch origin main
+          git reset --hard origin/main
+          python3 - <<'PY'
+          import hashlib,json
+          from pathlib import Path
+          trigger=json.loads(Path("/tmp/hmc-publish-trigger.json").read_text())
+          current_trigger=json.loads(Path("hmc-truck/PUBLISH_TRIGGER.json").read_text())
+          assert current_trigger==trigger, "Publish trigger changed concurrently"
+          path=Path("hmc-truck/manifest.json")
+          manifest=json.loads(path.read_text())
+          assert manifest["versionCode"]==trigger["previousVersionCode"], "Published version changed concurrently"
+          assert manifest["sha256"].lower()==trigger["previousSha256"].lower(), "Published APK changed concurrently"
+          apk=Path("/tmp/hmc-verified.apk").read_bytes()
+          assert hashlib.sha256(apk).hexdigest()==trigger["sha256"].lower()
+          Path("hmc-truck/HMC_Truck_Sequence_Feeding_latest.apk").write_bytes(apk)
+          filename="HMC_Truck_Sequence_Feeding_code"+str(trigger["versionCode"])+"_"+trigger["sha256"][:12].lower()+".apk"
+          versioned=Path("hmc-truck")/filename
+          if versioned.exists():
+              assert hashlib.sha256(versioned.read_bytes()).hexdigest()==trigger["sha256"].lower(), "Versioned APK path changed"
+          versioned.write_bytes(apk)
+          manifest={"versionName":trigger["versionName"],"versionCode":trigger["versionCode"],
+                    "apkUrl":"https://raw.githubusercontent.com/hanakim2001/BYD-SEAL-Radio-AutoScan-Updates/main/hmc-truck/"+filename,
+                    "sha256":trigger["sha256"].lower(),
+                    "sourceCommit":trigger["sourceCommit"],
+                    "signerCertificateSha256":trigger["expectedSignerCertificateSha256"].lower(),
+                    "notes":"code316 FIELD TEST: 로그인 세션 복구·실제 Body 공정 목록 조회·기간 통계·검증된 ALC/품번 연결. 현장 확인이 필요합니다."}
+          path.write_text(json.dumps(manifest,ensure_ascii=False,indent=2)+"\n")
+          Path("hmc-truck/PUBLISH_TRIGGER.json").unlink()
+          PY
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          git add hmc-truck/HMC_Truck_Sequence_Feeding_latest.apk hmc-truck/manifest.json hmc-truck/PUBLISH_TRIGGER.json
-          git commit -m "publish(hmc): V03.04.1 in-app update"
+          git add hmc-truck/HMC_Truck_Sequence_Feeding_latest.apk hmc-truck/HMC_Truck_Sequence_Feeding_code*.apk hmc-truck/manifest.json hmc-truck/PUBLISH_TRIGGER.json
+          git commit -m "publish(hmc): verified code316 FIELD TEST in-app update"
           git push origin HEAD:main
+
+      - name: Remove temporary release transfers
+        if: ${{ always() }}
+        shell: bash
+        run: rm -f /tmp/hmc-artifact.zip /tmp/hmc-verified.apk /tmp/hmc-publish-trigger.json
+
