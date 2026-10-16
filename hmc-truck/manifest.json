@@ -1,9 +1,9 @@
 {
   "versionName": "3.4.1",
-  "versionCode": 316,
-  "apkUrl": "https://raw.githubusercontent.com/hanakim2001/BYD-SEAL-Radio-AutoScan-Updates/main/hmc-truck/HMC_Truck_Sequence_Feeding_code316_008a5ae7515f.apk",
-  "sha256": "008a5ae7515fd8f2bec118a97b38285514549270b6e06b6167618971a75bde21",
-  "sourceCommit": "c1597ce8d5b43b2cab6eb4f4285c310575e2e39e",
+  "versionCode": 317,
+  "apkUrl": "https://raw.githubusercontent.com/hanakim2001/BYD-SEAL-Radio-AutoScan-Updates/main/hmc-truck/HMC_Truck_Sequence_Feeding_code317_2db3c0f58fb4.apk",
+  "sha256": "2db3c0f58fb4893bff25a787af7aceae88872496d23a8ef78bc01b430695c6cd",
+  "sourceCommit": "908df432d9ed96e47d0753122b6f85e9c19ac0d2",
   "signerCertificateSha256": "8a3441a39d2ca66e0c65bd31bcef6f61f2d84730277fa6abd43990f26babafe8",
-  "notes": "code316 FIELD TEST: 로그인 세션 복구·실제 Body 공정 목록 조회·기간 통계·검증된 ALC/품번 연결. 현장 확인이 필요합니다."
+  "notes": "code317 FIELD TEST: 저장된 시작 Body·실제 JIS 순서 기반 투입예정시간, 조회기간 밖 기준 조회 및 미산출 사유. 서버 공통 저장·실기기 확인이 필요합니다."
 }
