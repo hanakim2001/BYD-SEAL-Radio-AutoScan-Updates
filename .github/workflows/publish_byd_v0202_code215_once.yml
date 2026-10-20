@@ -1,0 +1,53 @@
+name: Publish BYD V02.02 code215 in-app update once
+on:
+  push:
+    branches: [main]
+    paths: ['.github/publish-v0202-code215-trigger']
+permissions:
+  contents: write
+concurrency:
+  group: byd-v0202-code215-publish
+  cancel-in-progress: false
+jobs:
+  publish:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: true
+      - name: Verify approved source and download exact code215 artifact
+        env:
+          ARTIFACT_URL: 'https://sdmntprindiasocentral.oaiusercontent.com/files/00000000-6474-8211-9bf1-e9fbe70899a9/raw?se=2026-10-20T10%3A33%3A00Z&sp=r&sv=2026-02-06&sr=b&scid=a039c5df-0505-5953-8363-adbf58a426fd&skoid=b1bca990-dcac-4c31-8ca1-ac563cf24c54&sktid=a48cca56-e6da-484e-a814-9c849652bcb3&skt=2026-10-19T23%3A55%3A29Z&ske=2026-10-20T23%3A55%3A29Z&sks=b&skv=2026-02-06&sig=J13QmTUOZ%2BrGZIlJjNVSA1XCS8w5/UXUpEF88Oxw4qI%3D'
+        run: |
+          set -euo pipefail
+          test "$(cat .github/publish-v0202-code215-trigger)" = "39406360225:12256807269:code215"
+          curl -fL --retry 2 "$ARTIFACT_URL" -o /tmp/byd-code215.zip
+          mkdir -p /tmp/byd-code215
+          unzip -q /tmp/byd-code215.zip -d /tmp/byd-code215
+          APK=/tmp/byd-code215/BYD_SEAL_AUDIO_V02.02_code215_TEST.apk
+          test -s "$APK"
+          echo "3f557207bf46365287a8c48e32c3ffab2125985c9d8e10a4ac5a0273dfacb9f1  $APK" | sha256sum -c -
+          grep -q "name='com.seunghyun.bydradioautoscan'" /tmp/byd-code215/package.txt
+          grep -q "versionCode='215'" /tmp/byd-code215/package.txt
+          grep -q "versionName='02.02'" /tmp/byd-code215/package.txt
+          grep -qi 'Verified using v2 scheme (APK Signature Scheme v2): true' /tmp/byd-code215/signing.txt
+          grep -qi 'cf00d495e6a69f32e8908ca294584a480a4404db80cedfe43ba7df5cb7a695b7' /tmp/byd-code215/signing.txt
+      - name: Publish verified code215 APK and manifest atomically
+        run: |
+          set -euo pipefail
+          cp /tmp/byd-code215/BYD_SEAL_AUDIO_V02.02_code215_TEST.apk BYD_SEAL_AUDIO_V02.02.apk
+          cat > manifest.json <<'EOF'
+          {
+            "versionCode": 215,
+            "versionName": "02.02",
+            "apkUrl": "https://raw.githubusercontent.com/hanakim2001/BYD-SEAL-Radio-AutoScan-Updates/main/BYD_SEAL_AUDIO_V02.02.apk",
+            "sha256": "3f557207bf46365287a8c48e32c3ffab2125985c9d8e10a4ac5a0273dfacb9f1",
+            "releaseNotes": "V02.02 code215 HOME 3 native UI real-car test candidate: Main+Vehicle, Music+Vehicle, Radio+Vehicle. Test only; vehicle/UI acceptance remains unverified."
+          }
+          EOF
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add BYD_SEAL_AUDIO_V02.02.apk manifest.json
+          git diff --cached --quiet || git commit -m "Publish BYD SEAL AUDIO code215 in-app update [skip ci]"
+          git push origin HEAD:main
