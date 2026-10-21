@@ -1,0 +1,7 @@
+{
+  "versionCode": 215,
+  "versionName": "02.02",
+  "apkUrl": "https://raw.githubusercontent.com/hanakim2001/BYD-SEAL-Radio-AutoScan-Updates/main/BYD_SEAL_AUDIO_V02.02.apk",
+  "sha256": "3f557207bf46365287a8c48e32c3ffab2125985c9d8e10a4ac5a0273dfacb9f1",
+  "releaseNotes": "V02.02 code215 HOME 3 native UI real-car test candidate: Main+Vehicle, Music+Vehicle, Radio+Vehicle. Test only; vehicle/UI acceptance remains unverified."
+}
