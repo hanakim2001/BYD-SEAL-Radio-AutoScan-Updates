@@ -1,7 +1,7 @@
 {
-  "versionCode": 215,
+  "versionCode": 216,
   "versionName": "02.02",
-  "apkUrl": "https://raw.githubusercontent.com/hanakim2001/BYD-SEAL-Radio-AutoScan-Updates/main/BYD_SEAL_AUDIO_V02.02.apk",
-  "sha256": "3f557207bf46365287a8c48e32c3ffab2125985c9d8e10a4ac5a0273dfacb9f1",
-  "releaseNotes": "V02.02 code215 HOME 3 native UI real-car test candidate: Main+Vehicle, Music+Vehicle, Radio+Vehicle. Test only; vehicle/UI acceptance remains unverified."
+  "apkUrl": "https://raw.githubusercontent.com/hanakim2001/BYD-SEAL-Radio-AutoScan-Updates/main/BYD_SEAL_AUDIO_V02.02_CODE216.apk",
+  "sha256": "1cc9b4e75035041abd20e057a31bb347a87945daa03661b2de282301d988f94d",
+  "releaseNotes": "V02.02 code216 HOME 3종 개선·확대/축소·OTT 수정 통합 실차 시험 후보. 기존 앱 위에 업데이트합니다. 실차 기능 합격은 0/27이며 #27 UNMAPPED 유지."
 }
