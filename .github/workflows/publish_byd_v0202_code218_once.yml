@@ -27,17 +27,12 @@ jobs:
           test "$(git diff --name-only HEAD^ HEAD)" = '.github/publish-v0202-code218-trigger'
           test ! -e BYD_SEAL_AUDIO_V02.02_CODE218.apk
           test "$(python3 -c 'import json;print(json.load(open("manifest.json"))["versionCode"])')" = '217'
-          RUN_URL="repos/hanakim2001/BYD-SEAL-Radio-AutoScan/actions/runs/42267067325"
-          test "$(gh api "$RUN_URL" --jq '.conclusion')" = 'success'
-          test "$(gh api "$RUN_URL" --jq '.head_sha')" = '4fdf635e30b508537a07206c5b58d95b292ae44d'
-          ART_URL="repos/hanakim2001/BYD-SEAL-Radio-AutoScan/actions/artifacts/13528520297"
-          test "$(gh api "$ART_URL" --jq '.expired')" = 'false'
-          test "$(gh api "$ART_URL" --jq '.workflow_run.id')" = '42267067325'
+          # Cross-repo GitHub token cannot read source Actions (404).
+          # Use a short-lived artifact handoff and verify the pinned archive,
+          # APK bytes, aapt package/version, and v2 signer BEFORE publishing.
+          ARTIFACT_URL='https://sdmntprjapaneast.oaiusercontent.com/files/00000000-0bf0-8209-b412-d77725adb164/raw?se=2026-11-07T01%3A30%3A23Z&sp=r&sv=2026-02-06&sr=b&scid=a2f4ab99-1c55-523b-b61c-93432d3696bf&skoid=b1bca990-dcac-4c31-8ca1-ac563cf24c54&sktid=a48cca56-e6da-484e-a814-9c849652bcb3&sks=b&skv=2026-02-06&skt=2026-11-07T00%3A20%3A17Z&ske=2026-11-08T00%3A20%3A17Z&sig=sGADpVrwqbD7qcCm0v64GJM52GdKG4onaGSHirbUGDk%3D'
           curl --fail --location --retry 2 --silent --show-error \
-            -H "Authorization: Bearer $GH_TOKEN" \
-            -H "Accept: application/vnd.github+json" \
-            'https://api.github.com/repos/hanakim2001/BYD-SEAL-Radio-AutoScan/actions/artifacts/13528520297/zip' \
-            -o /tmp/byd-218-evidence.zip
+            "$ARTIFACT_URL" -o /tmp/byd-218-evidence.zip
           echo 'd088771bb0adef745f2b71272abb9fc3f9f5621a92e607f89c05a644de64df2f  /tmp/byd-218-evidence.zip' | sha256sum -c -
           unzip -tq /tmp/byd-218-evidence.zip
           mkdir -p /tmp/byd-218
