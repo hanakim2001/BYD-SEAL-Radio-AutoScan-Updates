@@ -1,7 +1,7 @@
 {
-  "versionCode": 217,
+  "versionCode": 218,
   "versionName": "02.02",
-  "apkUrl": "https://raw.githubusercontent.com/hanakim2001/BYD-SEAL-Radio-AutoScan-Updates/main/BYD_SEAL_AUDIO_V02.02_CODE217.apk",
-  "sha256": "d294adc2f5d174e8ea6178e43eef1a644170afe1e3e7219891bf3cc31acf7753",
-  "releaseNotes": "V02.02 code217 실차 시험 후보. i라디오 방송 목록·재생순서·HOME/지도/MediaSession 조작 통합 수정 포함. 기존 code216과 앱 ID·서명 동일, 차량 앱 내 CHECK → UPDATE로 업데이트합니다. 실차 최종 검증 0/27, #27 UNMAPPED 유지."
+  "apkUrl": "https://raw.githubusercontent.com/hanakim2001/BYD-SEAL-Radio-AutoScan-Updates/main/BYD_SEAL_AUDIO_V02.02_CODE218.apk",
+  "sha256": "3d4d3ebeadd7737a3b236f0fd9bf8df614d5e1417d1105f954765637119b822d",
+  "releaseNotes": "V02.02(218) 실차 시험용 후보: 차량 수신·TPMS 복구 및 진단, USB/SD 같은 곡과 재생 위치 복원, 설정 업데이트 접근성, FM/i라디오·HOME 화면 개선. Android 빌드·호스트 20종 통과, 실차 0/27 VERIFIED. 기존 기능 실차 재확인 필요."
 }
