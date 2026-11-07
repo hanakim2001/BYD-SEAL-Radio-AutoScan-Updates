@@ -1,0 +1,98 @@
+name: Publish verified BYD V02.02(218) in-app field candidate once
+on:
+  push:
+    branches: [main]
+    paths: ['.github/publish-v0202-code218-trigger']
+permissions:
+  contents: write
+concurrency:
+  group: byd-v0202-code218-publish
+  cancel-in-progress: false
+jobs:
+  publish:
+    if: github.ref == 'refs/heads/main'
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 2
+          persist-credentials: true
+      - name: Verify one-shot trigger, successful candidate run and signed APK
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          set -euo pipefail
+          test "$(cat .github/publish-v0202-code218-trigger)" = '42267067325:13528520297:code218:3d4d3ebeadd7737a3b236f0fd9bf8df614d5e1417d1105f954765637119b822d'
+          test "$(git diff --name-only HEAD^ HEAD)" = '.github/publish-v0202-code218-trigger'
+          test ! -e BYD_SEAL_AUDIO_V02.02_CODE218.apk
+          test "$(python3 -c 'import json;print(json.load(open("manifest.json"))["versionCode"])')" = '217'
+          RUN_URL="repos/hanakim2001/BYD-SEAL-Radio-AutoScan/actions/runs/42267067325"
+          test "$(gh api "$RUN_URL" --jq '.conclusion')" = 'success'
+          test "$(gh api "$RUN_URL" --jq '.head_sha')" = '4fdf635e30b508537a07206c5b58d95b292ae44d'
+          ART_URL="repos/hanakim2001/BYD-SEAL-Radio-AutoScan/actions/artifacts/13528520297"
+          test "$(gh api "$ART_URL" --jq '.expired')" = 'false'
+          test "$(gh api "$ART_URL" --jq '.workflow_run.id')" = '42267067325'
+          curl --fail --location --retry 2 --silent --show-error \
+            -H "Authorization: Bearer $GH_TOKEN" \
+            -H "Accept: application/vnd.github+json" \
+            'https://api.github.com/repos/hanakim2001/BYD-SEAL-Radio-AutoScan/actions/artifacts/13528520297/zip' \
+            -o /tmp/byd-218-evidence.zip
+          echo 'd088771bb0adef745f2b71272abb9fc3f9f5621a92e607f89c05a644de64df2f  /tmp/byd-218-evidence.zip' | sha256sum -c -
+          unzip -tq /tmp/byd-218-evidence.zip
+          mkdir -p /tmp/byd-218
+          unzip -q /tmp/byd-218-evidence.zip -d /tmp/byd-218
+          APK=/tmp/byd-218/BYD_SEAL_AUDIO_V02.02_code218_CANDIDATE.apk
+          test -s "$APK"
+          echo "3d4d3ebeadd7737a3b236f0fd9bf8df614d5e1417d1105f954765637119b822d  $APK" | sha256sum -c -
+          AAPT="$(find "$ANDROID_HOME/build-tools" -type f -name aapt | sort -V | tail -n 1)"
+          APKSIGNER="$(find "$ANDROID_HOME/build-tools" -type f -name apksigner | sort -V | tail -n 1)"
+          "$AAPT" dump badging "$APK" > /tmp/byd-218/rechecked-package.txt
+          grep -q "name='com.seunghyun.bydradioautoscan'" /tmp/byd-218/rechecked-package.txt
+          grep -q "versionCode='218'" /tmp/byd-218/rechecked-package.txt
+          grep -q "versionName='02.02'" /tmp/byd-218/rechecked-package.txt
+          "$APKSIGNER" verify --verbose --print-certs "$APK" > /tmp/byd-218/rechecked-signing.txt
+          grep -qi 'Verified using v2 scheme (APK Signature Scheme v2): true' /tmp/byd-218/rechecked-signing.txt
+          grep -qi 'cf00d495e6a69f32e8908ca294584a480a4404db80cedfe43ba7df5cb7a695b7' /tmp/byd-218/rechecked-signing.txt
+      - name: Publish exact verified 218 APK and matching manifest together
+        run: |
+          set -euo pipefail
+          cp /tmp/byd-218/BYD_SEAL_AUDIO_V02.02_code218_CANDIDATE.apk BYD_SEAL_AUDIO_V02.02_CODE218.apk
+          python3 - <<'PY'
+          import json
+          from pathlib import Path
+          path=Path('manifest.json')
+          data=json.loads(path.read_text())
+          assert data['versionCode']==217
+          data.update({
+             'versionCode':218,
+             'versionName':'02.02',
+             'apkUrl':'https://raw.githubusercontent.com/hanakim2001/BYD-SEAL-Radio-AutoScan-Updates/main/BYD_SEAL_AUDIO_V02.02_CODE218.apk',
+             'sha256':'3d4d3ebeadd7737a3b236f0fd9bf8df614d5e1417d1105f954765637119b822d',
+             'releaseNotes':'V02.02(218) 실차 시험용 후보: 차량 수신·TPMS 복구 및 진단, USB/SD 같은 곡과 재생 위치 복원, 설정 업데이트 접근성, FM/i라디오·HOME 화면 개선. Android 빌드·호스트 20종 통과, 실차 0/27 VERIFIED. 기존 기능 실차 재확인 필요.'
+          })
+          path.write_text(json.dumps(data,ensure_ascii=False,indent=2)+'\n')
+          PY
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add BYD_SEAL_AUDIO_V02.02_CODE218.apk manifest.json
+          git diff --cached --check
+          git diff --cached --quiet && exit 1
+          git commit -m 'Publish verified BYD SEAL AUDIO V02.02(218) field APK [skip ci]'
+          git push origin HEAD:main
+      - name: Independently fetch published APK and verify SHA-256
+        run: |
+          set -euo pipefail
+          URL='https://raw.githubusercontent.com/hanakim2001/BYD-SEAL-Radio-AutoScan-Updates/main/BYD_SEAL_AUDIO_V02.02_CODE218.apk'
+          ok=0
+          for i in 1 2 3 4 5 6 7 8; do
+            if curl -fLsS --max-time 30 "$URL" -o /tmp/byd-218-published.apk; then
+              if echo '3d4d3ebeadd7737a3b236f0fd9bf8df614d5e1417d1105f954765637119b822d  /tmp/byd-218-published.apk' | sha256sum -c -; then
+                ok=1
+                break
+              fi
+            fi
+            sleep 2
+          done
+          test "$ok" = '1'
+          echo 'BYD V02.02(218) verified published APK: PASS'
