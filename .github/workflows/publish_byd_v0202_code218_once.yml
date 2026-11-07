@@ -23,7 +23,7 @@ jobs:
           GH_TOKEN: ${{ github.token }}
         run: |
           set -euo pipefail
-          test "$(cat .github/publish-v0202-code218-trigger)" = '42267067325:13528520297:code218:3d4d3ebeadd7737a3b236f0fd9bf8df614d5e1417d1105f954765637119b822d'
+          test "$(head -n 1 .github/publish-v0202-code218-trigger)" = '42267067325:13528520297:code218:3d4d3ebeadd7737a3b236f0fd9bf8df614d5e1417d1105f954765637119b822d'
           test "$(git diff --name-only HEAD^ HEAD)" = '.github/publish-v0202-code218-trigger'
           test ! -e BYD_SEAL_AUDIO_V02.02_CODE218.apk
           test "$(python3 -c 'import json;print(json.load(open("manifest.json"))["versionCode"])')" = '217'
