@@ -1,0 +1,88 @@
+name: Publish BYD V02.02(219) verified in-app update once
+on:
+  push:
+    branches: [main]
+    paths: ['.github/publish-v0202-code219-trigger']
+permissions:
+  contents: write
+concurrency:
+  group: byd-v0202-code219-publish-single
+  cancel-in-progress: false
+jobs:
+  publish:
+    if: github.ref == 'refs/heads/main'
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 2
+          persist-credentials: true
+      - name: Check single request and verify immutable 219 artifact before publishing
+        run: |
+          set -euo pipefail
+          test "$GITHUB_RUN_ATTEMPT" = "1"
+          test "$(git diff --name-only HEAD^ HEAD)" = '.github/publish-v0202-code219-trigger'
+          test "$(cat .github/publish-v0202-code219-trigger)" = '42431231200:13597359089:219:b946c32fb07605112c10d84af5613c2d5ef34c91fabbdd8af97bca3a6f13abff'
+          test ! -e BYD_SEAL_AUDIO_V02.02_CODE219.apk
+          test "$(python3 -c 'import json;print(json.load(open("manifest.json"))["versionCode"])')" = '218'
+          curl --fail --location --retry 2 --silent --show-error --max-time 120 'https://sdmntprjapaneast.oaiusercontent.com/files/00000000-0e3c-8209-a599-ee33d82b948a/raw?se=2026-11-08T03%3A05%3A10Z&sp=r&sv=2026-02-06&sr=b&scid=424abb96-503f-5344-a011-0ab85f25767f&skoid=b1bca990-dcac-4c31-8ca1-ac563cf24c54&sktid=a48cca56-e6da-484e-a814-9c849652bcb3&skt=2026-11-08T00%3A53%3A58Z&ske=2026-11-09T00%3A53%3A58Z&sks=b&skv=2026-02-06&sig=9ZRGtYgy0zENOB1JAhXw2CEiHhDzrSKLsNLNDEFjhWI%3D' -o /tmp/byd219.zip
+          echo '271e587e386e7badb632cc71cbbbcd5b46bac74a145956b08b6cc622f34e3856  /tmp/byd219.zip' | sha256sum -c -
+          unzip -tq /tmp/byd219.zip
+          mkdir -p /tmp/byd219
+          unzip -q /tmp/byd219.zip -d /tmp/byd219
+          APK=/tmp/byd219/BYD_SEAL_AUDIO_V02.02_CODE219_CANDIDATE.apk
+          test -s "$APK"
+          echo 'b946c32fb07605112c10d84af5613c2d5ef34c91fabbdd8af97bca3a6f13abff  '"$APK" | sha256sum -c -
+          AAPT="$(find "$ANDROID_HOME/build-tools" -type f -name aapt | sort -V | tail -n 1)"
+          APKSIGNER="$(find "$ANDROID_HOME/build-tools" -type f -name apksigner | sort -V | tail -n 1)"
+          "$AAPT" dump badging "$APK" > /tmp/byd219/package-verified.txt
+          grep -q "name='com.seunghyun.bydradioautoscan'" /tmp/byd219/package-verified.txt
+          grep -q "versionCode='219'" /tmp/byd219/package-verified.txt
+          grep -q "versionName='02.02'" /tmp/byd219/package-verified.txt
+          "$APKSIGNER" verify --verbose --print-certs "$APK" > /tmp/byd219/signing-verified.txt
+          grep -qi 'Verified using v2 scheme (APK Signature Scheme v2): true' /tmp/byd219/signing-verified.txt
+          grep -qi 'cf00d495e6a69f32e8908ca294584a480a4404db80cedfe43ba7df5cb7a695b7' /tmp/byd219/signing-verified.txt
+      - name: Publish verified APK and switch manifest from 218 to 219
+        run: |
+          set -euo pipefail
+          cp /tmp/byd219/BYD_SEAL_AUDIO_V02.02_CODE219_CANDIDATE.apk BYD_SEAL_AUDIO_V02.02_CODE219.apk
+          python3 - <<'PY'
+          import json
+          from pathlib import Path
+          p=Path('manifest.json')
+          data=json.loads(p.read_text())
+          assert data['versionCode']==218
+          data.update({
+            'versionCode':219,
+            'versionName':'02.02',
+            'apkUrl':'https://raw.githubusercontent.com/hanakim2001/BYD-SEAL-Radio-AutoScan-Updates/main/BYD_SEAL_AUDIO_V02.02_CODE219.apk',
+            'sha256':'b946c32fb07605112c10d84af5613c2d5ef34c91fabbdd8af97bca3a6f13abff',
+            'releaseNotes':'V02.02(219) 실차 시험 후보: 설정 UPDATE 고정 접근, 좁은 화면 메뉴 너비, 음악 목록 이동·스크롤 경로 보강, 차량 진단 접근. 호스트 21종 및 Android 서명 빌드 통과. OEM 계기·HUD·FM 및 실제 스크롤 동작은 실차 미검증이며 완결 기능으로 홍보하지 않음.'
+          })
+          p.write_text(json.dumps(data,ensure_ascii=False,indent=2)+'\n')
+          PY
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add BYD_SEAL_AUDIO_V02.02_CODE219.apk manifest.json
+          git diff --cached --check
+          git commit -m 'Publish BYD V02.02(219) verified in-app test update [skip ci]'
+          git push origin HEAD:main
+      - name: Independently verify remote 219 APK and manifest
+        run: |
+          set -euo pipefail
+          URL='https://raw.githubusercontent.com/hanakim2001/BYD-SEAL-Radio-AutoScan-Updates/main/BYD_SEAL_AUDIO_V02.02_CODE219.apk'
+          ok=0
+          for i in 1 2 3 4 5 6 7 8; do
+            if curl -fLsS --max-time 30 "$URL" -o /tmp/byd219-published.apk && echo 'b946c32fb07605112c10d84af5613c2d5ef34c91fabbdd8af97bca3a6f13abff  /tmp/byd219-published.apk' | sha256sum -c -; then ok=1; break; fi
+            sleep 2
+          done
+          test "$ok" = 1
+          curl -fLsS 'https://raw.githubusercontent.com/hanakim2001/BYD-SEAL-Radio-AutoScan-Updates/main/manifest.json' -o /tmp/byd219-manifest.json
+          python3 - <<'PY'
+          import json
+          d=json.load(open('/tmp/byd219-manifest.json'))
+          assert d['versionCode']==219
+          assert d['sha256']=='b946c32fb07605112c10d84af5613c2d5ef34c91fabbdd8af97bca3a6f13abff'
+          print('219 published APK and manifest PASS')
+          PY
