@@ -1,7 +1,7 @@
 {
-  "versionCode": 219,
+  "versionCode": 220,
   "versionName": "02.02",
-  "apkUrl": "https://raw.githubusercontent.com/hanakim2001/BYD-SEAL-Radio-AutoScan-Updates/main/BYD_SEAL_AUDIO_V02.02_CODE219.apk",
-  "sha256": "b946c32fb07605112c10d84af5613c2d5ef34c91fabbdd8af97bca3a6f13abff",
-  "releaseNotes": "V02.02(219) 실차 시험 후보: 설정 UPDATE 고정 접근, 좁은 화면 메뉴 너비, 음악 목록 이동·스크롤 경로 보강, 차량 진단 접근. 호스트 21종 및 Android 서명 빌드 통과. OEM 계기·HUD·FM 및 실제 스크롤 동작은 실차 미검증이며 완결 기능으로 홍보하지 않음."
+  "apkUrl": "https://raw.githubusercontent.com/hanakim2001/BYD-SEAL-Radio-AutoScan-Updates/main/BYD_SEAL_AUDIO_V02.02_CODE220.apk",
+  "sha256": "b32afaaae5eaa96aa41872c53ed064f2ad311a8b4daad21f645d8e2bb7ef1f22",
+  "releaseNotes": "V02.02(220) 개인 실차 UI 시험용: HOME/차량/음악/FM-AM-iRadio/지도·분할/OTT/Web/설정 8영역 UI 소스 마감. 실차 화면·터치·기능 검증 미실시(0/27 VERIFIED). 기존 설치 삭제 없이 219에서 업데이트 시험."
 }
