@@ -1,0 +1,95 @@
+name: Publish BYD V02.02(220) signed in-app trial once
+on:
+  push:
+    branches: [main]
+    paths: ['.github/publish-v0202-code220-trigger.json']
+permissions:
+  contents: write
+concurrency:
+  group: byd-v0202-code220-publish-single
+  cancel-in-progress: false
+jobs:
+  publish:
+    if: github.ref == 'refs/heads/main'
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 2
+          persist-credentials: true
+      - name: Fail closed on stale manifest and verify exact code220 APK
+        run: |
+          set -euo pipefail
+          test "$GITHUB_RUN_ATTEMPT" = 1
+          test "$(git diff --name-only HEAD^ HEAD)" = '.github/publish-v0202-code220-trigger.json'
+          test ! -e BYD_SEAL_AUDIO_V02.02_CODE220.apk
+          test "$(python3 -c 'import json;print(json.load(open("manifest.json"))["versionCode"])')" = 219
+          python3 - <<'PY'
+          import json
+          d=json.load(open('.github/publish-v0202-code220-trigger.json'))
+          assert d['source_run']==42957684408
+          assert d['zip_sha256']=='108c15e0fe2cf3991e9ffeb143d834e3d26f0b6441474685838ac762eea23324'
+          assert d['apk_sha256']=='b32afaaae5eaa96aa41872c53ed064f2ad311a8b4daad21f645d8e2bb7ef1f22'
+          assert d['download_url'].startswith('https://sdmnt')
+          with open('/tmp/byd220-url','w') as f:f.write(d['download_url'])
+          PY
+          curl --fail --location --retry 1 --silent --show-error --max-time 120 "$(cat /tmp/byd220-url)" -o /tmp/byd220.zip
+          echo '108c15e0fe2cf3991e9ffeb143d834e3d26f0b6441474685838ac762eea23324  /tmp/byd220.zip' | sha256sum -c -
+          unzip -tq /tmp/byd220.zip
+          mkdir -p /tmp/byd220
+          unzip -q /tmp/byd220.zip -d /tmp/byd220
+          APK=/tmp/byd220/BYD_SEAL_AUDIO_V02.02_CODE220_UI_TRIAL.apk
+          echo 'b32afaaae5eaa96aa41872c53ed064f2ad311a8b4daad21f645d8e2bb7ef1f22  '"$APK" | sha256sum -c -
+          AAPT="$(find "$ANDROID_HOME/build-tools" -type f -name aapt | sort -V | tail -n 1)"
+          APKSIGNER="$(find "$ANDROID_HOME/build-tools" -type f -name apksigner | sort -V | tail -n 1)"
+          "$AAPT" dump badging "$APK" > /tmp/byd220/package.txt
+          grep -q "name='com.seunghyun.bydradioautoscan'" /tmp/byd220/package.txt
+          grep -q "versionCode='220'" /tmp/byd220/package.txt
+          grep -q "versionName='02.02'" /tmp/byd220/package.txt
+          "$APKSIGNER" verify --verbose --print-certs "$APK" > /tmp/byd220/signing.txt
+          grep -qi 'Verified using v2 scheme (APK Signature Scheme v2): true' /tmp/byd220/signing.txt
+          grep -qi 'cf00d495e6a69f32e8908ca294584a480a4404db80cedfe43ba7df5cb7a695b7' /tmp/byd220/signing.txt
+      - name: Publish signed 220 APK and update existing manifest
+        run: |
+          set -euo pipefail
+          cp /tmp/byd220/BYD_SEAL_AUDIO_V02.02_CODE220_UI_TRIAL.apk BYD_SEAL_AUDIO_V02.02_CODE220.apk
+          python3 - <<'PY'
+          import json
+          from pathlib import Path
+          p=Path('manifest.json')
+          d=json.loads(p.read_text())
+          assert d['versionCode']==219
+          d.update({
+            'versionCode':220,
+            'versionName':'02.02',
+            'apkUrl':'https://raw.githubusercontent.com/hanakim2001/BYD-SEAL-Radio-AutoScan-Updates/main/BYD_SEAL_AUDIO_V02.02_CODE220.apk',
+            'sha256':'b32afaaae5eaa96aa41872c53ed064f2ad311a8b4daad21f645d8e2bb7ef1f22',
+            'releaseNotes':'V02.02(220) 개인 실차 UI 시험용: HOME/차량/음악/FM-AM-iRadio/지도·분할/OTT/Web/설정 8영역 UI 소스 마감. 실차 화면·터치·기능 검증 미실시(0/27 VERIFIED). 기존 설치 삭제 없이 219에서 업데이트 시험.'
+          })
+          p.write_text(json.dumps(d,ensure_ascii=False,indent=2)+'\n')
+          PY
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add BYD_SEAL_AUDIO_V02.02_CODE220.apk manifest.json
+          git diff --cached --check
+          git commit -m 'Publish BYD V02.02(220) in-app UI trial [skip ci]'
+          git push origin HEAD:main
+      - name: Independently verify published APK and manifest
+        run: |
+          set -euo pipefail
+          URL='https://raw.githubusercontent.com/hanakim2001/BYD-SEAL-Radio-AutoScan-Updates/main/BYD_SEAL_AUDIO_V02.02_CODE220.apk'
+          ok=0
+          for i in 1 2 3 4 5 6 7 8; do
+            if curl -fLsS --max-time 30 "$URL" -o /tmp/byd220-published.apk && echo 'b32afaaae5eaa96aa41872c53ed064f2ad311a8b4daad21f645d8e2bb7ef1f22  /tmp/byd220-published.apk' | sha256sum -c -; then ok=1; break; fi
+            sleep 2
+          done
+          test "$ok" = 1
+          curl -fLsS 'https://raw.githubusercontent.com/hanakim2001/BYD-SEAL-Radio-AutoScan-Updates/main/manifest.json' -o /tmp/byd220-manifest.json
+          python3 - <<'PY'
+          import json
+          d=json.load(open('/tmp/byd220-manifest.json'))
+          assert d['versionCode']==220
+          assert d['sha256']=='b32afaaae5eaa96aa41872c53ed064f2ad311a8b4daad21f645d8e2bb7ef1f22'
+          print('code220 published APK and in-app manifest PASS')
+          PY
