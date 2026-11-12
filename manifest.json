@@ -1,7 +1,7 @@
 {
-  "versionCode": 220,
+  "versionCode": 221,
   "versionName": "02.02",
-  "apkUrl": "https://raw.githubusercontent.com/hanakim2001/BYD-SEAL-Radio-AutoScan-Updates/main/BYD_SEAL_AUDIO_V02.02_CODE220.apk",
-  "sha256": "b32afaaae5eaa96aa41872c53ed064f2ad311a8b4daad21f645d8e2bb7ef1f22",
-  "releaseNotes": "V02.02(220) 개인 실차 UI 시험용: HOME/차량/음악/FM-AM-iRadio/지도·분할/OTT/Web/설정 8영역 UI 소스 마감. 실차 화면·터치·기능 검증 미실시(0/27 VERIFIED). 기존 설치 삭제 없이 219에서 업데이트 시험."
+  "apkUrl": "https://raw.githubusercontent.com/hanakim2001/BYD-SEAL-Radio-AutoScan-Updates/main/BYD_SEAL_AUDIO_V02.02_CODE221.apk",
+  "sha256": "4ecf3b9f7619e78df075563e2b30211c351643b026e932fe40d90457c6940af0",
+  "releaseNotes": "code221 실차 시험 업데이트: 음악/SD·USB 식별, HOME·FM/AM·i라디오·차량 화면, OTT·Web 개선 후보. 실차 SD224/USB·청취·UI 검증 전. 기존 앱 삭제 없이 설정 > UPDATE > CHECK."
 }
