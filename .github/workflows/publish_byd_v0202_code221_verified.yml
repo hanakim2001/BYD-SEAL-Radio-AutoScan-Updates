@@ -1,0 +1,126 @@
+name: Publish verified BYD code221 via existing in-app UPDATE
+on:
+  push:
+    branches: [main]
+    paths: ['.github/publish-v0202-code221-request.json']
+permissions:
+  contents: write
+concurrency:
+  group: byd-code221-publish-one
+  cancel-in-progress: false
+jobs:
+  publish:
+    runs-on: ubuntu-latest
+    timeout-minutes: 18
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 2
+          persist-credentials: true
+      - name: Download and independently verify candidate
+        shell: bash
+        run: |
+          set -euo pipefail
+          test "$GITHUB_RUN_ATTEMPT" = 1
+          test "$(git diff --name-only HEAD^ HEAD)" = '.github/publish-v0202-code221-request.json'
+          test ! -e BYD_SEAL_AUDIO_V02.02_CODE221.apk
+          mkdir -p /tmp/byd221
+          python3 - <<'PY'
+          import json, pathlib
+          req=json.loads(pathlib.Path('.github/publish-v0202-code221-request.json').read_text())
+          current=json.loads(pathlib.Path('manifest.json').read_text())
+          assert current['versionCode']==220, 'Do not overwrite unexpected version'
+          assert req['source_run']==43160908195
+          assert req['source_sha']=='d14a50d8d31009549b6bb02c03123e9301eb3b6c'
+          assert req['apk_name']=='BYD_SEAL_AUDIO_V02.02_CODE221_VERIFIED_TRIAL.apk'
+          assert len(req['zip_sha256'])==64 and len(req['apk_sha256'])==64
+          assert req['archive_url'].startswith('https://sdmnt'), 'Expected ephemeral artifact URL'
+          pathlib.Path('/tmp/byd221/url').write_text(req['archive_url'])
+          PY
+          curl --fail --location --retry 1 --silent --show-error --max-time 120 "$(cat /tmp/byd221/url)" -o /tmp/byd221/archive.zip
+          python3 - <<'PY'
+          import hashlib,json,pathlib
+          p=pathlib.Path('/tmp/byd221/archive.zip')
+          x=json.loads(pathlib.Path('.github/publish-v0202-code221-request.json').read_text())
+          assert hashlib.sha256(p.read_bytes()).hexdigest()==x['zip_sha256'],'ZIP mismatch'
+          PY
+          unzip -tq /tmp/byd221/archive.zip
+          unzip -q /tmp/byd221/archive.zip -d /tmp/byd221
+          python3 - <<'PY'
+          import hashlib,json,pathlib
+          req=json.loads(pathlib.Path('.github/publish-v0202-code221-request.json').read_text())
+          p=pathlib.Path('/tmp/byd221')/req['apk_name']
+          assert hashlib.sha256(p.read_bytes()).hexdigest()==req['apk_sha256'],'APK mismatch'
+          assert pathlib.Path('/tmp/byd221/source_sha.txt').read_text().strip()==req['source_sha']
+          PY
+          APK=/tmp/byd221/BYD_SEAL_AUDIO_V02.02_CODE221_VERIFIED_TRIAL.apk
+          AAPT="$(find "$ANDROID_HOME/build-tools" -type f -name aapt | sort -V | tail -n 1)"
+          SIGNER="$(find "$ANDROID_HOME/build-tools" -type f -name apksigner | sort -V | tail -n 1)"
+          "$AAPT" dump badging "$APK" > /tmp/byd221/package.txt
+          grep -q "name='com.seunghyun.bydradioautoscan'" /tmp/byd221/package.txt
+          grep -q "versionCode='221'" /tmp/byd221/package.txt
+          grep -q "versionName='02.02'" /tmp/byd221/package.txt
+          "$SIGNER" verify --verbose --print-certs "$APK" > /tmp/byd221/signing.txt
+          grep -qi 'Verified using v2 scheme (APK Signature Scheme v2): true' /tmp/byd221/signing.txt
+          grep -qi 'cf00d495e6a69f32e8908ca294584a480a4404db80cedfe43ba7df5cb7a695b7' /tmp/byd221/signing.txt
+      - name: Publish the verified APK FIRST (not the manifest)
+        shell: bash
+        run: |
+          set -euo pipefail
+          cp /tmp/byd221/BYD_SEAL_AUDIO_V02.02_CODE221_VERIFIED_TRIAL.apk BYD_SEAL_AUDIO_V02.02_CODE221.apk
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add BYD_SEAL_AUDIO_V02.02_CODE221.apk
+          git diff --cached --check
+          git commit -m 'Publish signed code221 trial APK before UPDATE manifest [skip ci]'
+          git push origin HEAD:main
+      - name: Verify published HTTPS APK byte-for-byte BEFORE manifest
+        shell: bash
+        run: |
+          set -euo pipefail
+          URL='https://raw.githubusercontent.com/hanakim2001/BYD-SEAL-Radio-AutoScan-Updates/main/BYD_SEAL_AUDIO_V02.02_CODE221.apk'
+          ok=0
+          for n in 1 2 3 4 5 6 7 8; do
+            if curl -fLsS --max-time 30 "$URL" -o /tmp/byd221/online.apk; then
+              if python3 - <<'PY'
+          import hashlib,json
+          p='/tmp/byd221/online.apk'
+          h=hashlib.sha256(open(p,'rb').read()).hexdigest()
+          x=json.load(open('.github/publish-v0202-code221-request.json'))
+          assert h==x['apk_sha256'],'Remote APK SHA mismatch'
+          PY
+              then ok=1;break;fi
+            fi
+            sleep 2
+          done
+          test "$ok" = 1
+      - name: Update manifest LAST, after verified remote APK
+        shell: bash
+        run: |
+          set -euo pipefail
+          python3 - <<'PY'
+          import json,pathlib
+          p=pathlib.Path('manifest.json')
+          d=json.loads(p.read_text())
+          x=json.loads(pathlib.Path('.github/publish-v0202-code221-request.json').read_text())
+          assert d['versionCode']==220
+          d.update({'versionCode':221,'versionName':'02.02','apkUrl':'https://raw.githubusercontent.com/hanakim2001/BYD-SEAL-Radio-AutoScan-Updates/main/BYD_SEAL_AUDIO_V02.02_CODE221.apk','sha256':x['apk_sha256'],'releaseNotes':'code221 실차 시험 업데이트: 음악/SD·USB 식별, HOME·FM/AM·i라디오·차량 화면, OTT·Web 개선 후보. 실차 SD224/USB·청취·UI 검증 전. 기존 앱 삭제 없이 설정 > UPDATE > CHECK.'})
+          p.write_text(json.dumps(d,ensure_ascii=False,indent=2)+'\n')
+          PY
+          git add manifest.json
+          git diff --cached --check
+          git commit -m 'Enable verified code221 in existing in-app UPDATE channel [skip ci]'
+          git push origin HEAD:main
+      - name: Verify published manifest
+        shell: bash
+        run: |
+          set -euo pipefail
+          curl -fLsS --max-time 40 'https://raw.githubusercontent.com/hanakim2001/BYD-SEAL-Radio-AutoScan-Updates/main/manifest.json' -o /tmp/byd221/manifest.json
+          python3 - <<'PY'
+          import json
+          x=json.load(open('.github/publish-v0202-code221-request.json'))
+          d=json.load(open('/tmp/byd221/manifest.json'))
+          assert d['versionCode']==221
+          assert d['sha256']==x['apk_sha256']
+          print('CODE221 IN-APP UPDATE: APK+MANIFEST VERIFIED')
+          PY
