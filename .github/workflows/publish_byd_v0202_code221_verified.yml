@@ -30,8 +30,8 @@ jobs:
           req=json.loads(pathlib.Path('.github/publish-v0202-code221-request.json').read_text())
           current=json.loads(pathlib.Path('manifest.json').read_text())
           assert current['versionCode']==220, 'Do not overwrite unexpected version'
-          assert req['source_run']==43160908195
-          assert req['source_sha']=='d14a50d8d31009549b6bb02c03123e9301eb3b6c'
+          assert req['source_run']==43161225091
+          assert req['source_sha']=='6bea8fed3fa469659ebe76e6e0bb8f8b60a10197'
           assert req['apk_name']=='BYD_SEAL_AUDIO_V02.02_CODE221_VERIFIED_TRIAL.apk'
           assert len(req['zip_sha256'])==64 and len(req['apk_sha256'])==64
           assert req['archive_url'].startswith('https://sdmnt'), 'Expected ephemeral artifact URL'
