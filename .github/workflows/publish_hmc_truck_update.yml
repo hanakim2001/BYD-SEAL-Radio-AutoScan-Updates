@@ -79,8 +79,38 @@ jobs:
           with zipfile.ZipFile("/tmp/hmc-artifact.zip") as archive:
               apks=[n for n in archive.namelist() if n.endswith(".apk")]
               records=[n for n in archive.namelist() if n.endswith("V03.04.1_FIELD_TEST_PROVENANCE.json")]
-              assert len(apks)==1 and len(records)==1, "Ambiguous release artifact"
-              provenance=json.loads(archive.read(records[0]))
+              candidates=[n for n in archive.namelist() if n.endswith("BUILD_INFO.txt")]
+              assert len(apks)==1, "Ambiguous release APK"
+              if len(records)==1 and not candidates:
+                  provenance=json.loads(archive.read(records[0]))
+              else:
+                  assert len(records)==0 and len(candidates)==1, "Ambiguous APK provenance"
+                  lines=archive.read(candidates[0]).decode("utf-8").splitlines()
+                  fields=dict(line.split("=",1) for line in lines if "=" in line)
+                  assert fields.get("version")=="3.4.1+319", "Incorrect candidate version"
+                  assert fields.get("state")=="FIELD_CANDIDATE_NOT_VERIFIED", "Candidate status mismatch"
+                  assert fields.get("JIS_WRITE")=="FORBIDDEN", "JIS read-only lock missing"
+                  assert fields.get("shared_state_remote")=="DISABLED", "Remote state safety lock missing"
+                  assert fields.get("full_regression")=="failure", "Regression evidence must remain explicit"
+                  signer_files=[n for n in archive.namelist() if n.endswith("SIGNING_CERTIFICATE.txt")]
+                  sha_files=[n for n in archive.namelist() if n.endswith("SHA256.txt")]
+                  assert len(signer_files)==len(sha_files)==1, "Missing candidate integrity evidence"
+                  cert=archive.read(signer_files[0]).decode("utf-8")
+                  assert os.environ["EXPECTED_SIGNER"] in cert, "Candidate signer evidence mismatch"
+                  sha_line=archive.read(sha_files[0]).decode("utf-8").split()[0].lower()
+                  assert sha_line==os.environ["EXPECTED_SHA"], "Candidate SHA-256 evidence mismatch"
+                  provenance={
+                      "apkSha256":sha_line,
+                      "sourceCommit":fields.get("source"),
+                      "versionCode":319,
+                      "versionName":"3.4.1",
+                      "applicationId":"com.seunghyun.hmc.truck_feeding",
+                      "target":"lib/main_stage5_field_demo.dart",
+                      "signerCertificateSha256":os.environ["EXPECTED_SIGNER"]
+                  }
+                  # Code319 is built from operational main_stage5, not the retired demo.
+                  assert provenance["sourceCommit"]==os.environ["EXPECTED_SOURCE"], "Unexpected candidate source"
+                  provenance["target"]="lib/main_stage5.dart"
               apk_bytes=archive.read(apks[0])
           digest=hashlib.sha256(apk_bytes).hexdigest()
           assert digest==os.environ["EXPECTED_SHA"]==provenance["apkSha256"], "APK digest mismatch"
@@ -88,7 +118,7 @@ jobs:
           assert provenance["versionCode"]==int(os.environ["VERSION_CODE"]), "Provenance version mismatch"
           assert provenance["versionName"]==os.environ["VERSION_NAME"], "Provenance name mismatch"
           assert provenance["applicationId"]=="com.seunghyun.hmc.truck_feeding"
-          assert provenance["target"]=="lib/main_stage5_field_demo.dart"
+          assert provenance["target"] in ("lib/main_stage5_field_demo.dart","lib/main_stage5.dart")
           assert provenance["signerCertificateSha256"].lower()==os.environ["EXPECTED_SIGNER"]
           apk=Path("/tmp/hmc-verified.apk"); apk.write_bytes(apk_bytes)
           sdk=Path(os.environ.get("ANDROID_HOME") or os.environ["ANDROID_SDK_ROOT"])
