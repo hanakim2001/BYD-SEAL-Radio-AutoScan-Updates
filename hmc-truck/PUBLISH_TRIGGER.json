@@ -1,0 +1,11 @@
+{
+  "artifactUrl": "https://sdmntprwestus2.oaiusercontent.com/files/00000000-3abc-81f8-b441-55b8737bdf9c/raw?se=2026-11-13T10%3A45%3A56Z&sp=r&sv=2026-06-06&sr=b&scid=25e8087b-2586-5ec4-b5ad-0b61f86f5bb7&skoid=b1bca990-dcac-4c31-8ca1-ac563cf24c54&sktid=a48cca56-e6da-484e-a814-9c849652bcb3&skt=2026-11-12T22%3A27%3A35Z&ske=2026-11-13T22%3A27%3A35Z&sks=b&skv=2026-06-06&sig=87x/f2dY8FuJQ/ukinpTOya%2Bw/OTye4M9SHIIlDk7VM%3D",
+  "sha256": "1803105e235be0b9f8094d501def48fbae93802155a703db07cbdb96bac127a3",
+  "versionName": "3.4.1",
+  "versionCode": 320,
+  "sourceCommit": "80398de9bcc79f51d7ac03fb4a3658af3f762dd9",
+  "expectedSignerCertificateSha256": "8a3441a39d2ca66e0c65bd31bcef6f61f2d84730277fa6abd43990f26babafe8",
+  "previousVersionCode": 319,
+  "previousSha256": "386d32db7f0b820ed53638da309c6c0858818169d218d88bab2c70fac4bc536e",
+  "notes": "code320 Android smartphone FIELD TEST via existing in-app update. Full regression 1032 PASS/130 FAIL; FINAL not approved. Login/OTP server validation PENDING; sanitized diagnostics available on failed check. Shared work state is MEMORY-ONLY, NOT remotely synchronized; do not use for production shared writes. Do not uninstall code319; device approval and real-world QA required."
+}
