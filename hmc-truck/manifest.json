@@ -1,9 +1,9 @@
 {
   "versionName": "3.4.1",
-  "versionCode": 317,
-  "apkUrl": "https://raw.githubusercontent.com/hanakim2001/BYD-SEAL-Radio-AutoScan-Updates/main/hmc-truck/HMC_Truck_Sequence_Feeding_code317_2db3c0f58fb4.apk",
-  "sha256": "2db3c0f58fb4893bff25a787af7aceae88872496d23a8ef78bc01b430695c6cd",
-  "sourceCommit": "908df432d9ed96e47d0753122b6f85e9c19ac0d2",
+  "versionCode": 319,
+  "apkUrl": "https://raw.githubusercontent.com/hanakim2001/BYD-SEAL-Radio-AutoScan-Updates/main/hmc-truck/HMC_Truck_Sequence_Feeding_code319_386d32db7f0b.apk",
+  "sha256": "386d32db7f0b820ed53638da309c6c0858818169d218d88bab2c70fac4bc536e",
+  "sourceCommit": "fa6f5189cb28d9d365429615dde52b5e20deff03",
   "signerCertificateSha256": "8a3441a39d2ca66e0c65bd31bcef6f61f2d84730277fa6abd43990f26babafe8",
-  "notes": "code317 FIELD TEST: 저장된 시작 Body·실제 JIS 순서 기반 투입예정시간, 조회기간 밖 기준 조회 및 미산출 사유. 서버 공통 저장·실기기 확인이 필요합니다."
+  "notes": "code319 스마트폰 현장 시험용 앱 내 업데이트. 회귀검증 FAIL(397건 PASS, 74건 FAIL 관측 후 시간 초과), FINAL 아님. 기존 앱 삭제 금지. 실기기 검증 필요."
 }
