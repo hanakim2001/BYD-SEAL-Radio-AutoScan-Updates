@@ -78,11 +78,25 @@ jobs:
           from pathlib import Path
           with zipfile.ZipFile("/tmp/hmc-artifact.zip") as archive:
               apks=[n for n in archive.namelist() if n.endswith(".apk")]
-              records=[n for n in archive.namelist() if n.endswith("V03.04.1_FIELD_TEST_PROVENANCE.json")]
+              legacy_records=[n for n in archive.namelist() if n.endswith("V03.04.1_FIELD_TEST_PROVENANCE.json")]
+              r2_records=[n for n in archive.namelist() if n.endswith("HMC_3.4.1_322_R2_PROVENANCE.json")]
+              records=legacy_records+r2_records
               candidates=[n for n in archive.namelist() if n.endswith("BUILD_INFO.txt")]
               assert len(apks)==1, "Ambiguous release APK"
               if len(records)==1 and not candidates:
                   provenance=json.loads(archive.read(records[0]))
+                  if r2_records:
+                      # The new code322 builder uses its own evidence schema.
+                      # Never silently relabel this FIELD DEMO as a FINAL or
+                      # shared-state production build.
+                      assert len(r2_records)==1 and not legacy_records, "Ambiguous R2 evidence"
+                      assert int(os.environ["VERSION_CODE"])==322, "R2 version mismatch"
+                      assert provenance.get("trialOnly") is True, "R2 must remain a trial"
+                      assert provenance.get("finalRelease") is False, "R2 cannot be FINAL"
+                      assert provenance.get("mainMerge")=="FORBIDDEN", "R2 main merge forbidden"
+                      assert provenance.get("deviceValidation")=="PENDING", "R2 device evidence mismatch"
+                      assert provenance.get("sharedStateBackend")=="DISABLED_FIELD_DEMO_LOCAL_ONLY", "R2 shared-state boundary changed"
+                      assert provenance.get("target")=="lib/main_stage5_field_demo.dart", "R2 must be field demo"
               else:
                   assert len(records)==0 and len(candidates)==1, "Ambiguous APK provenance"
                   lines=archive.read(candidates[0]).decode("utf-8").splitlines()
