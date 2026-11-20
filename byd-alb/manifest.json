@@ -3,9 +3,9 @@
   "channel": "QA",
   "status": "released",
   "updatedAt": "2026-11-20",
-  "versionCode": 1022,
-  "versionName": "01.01_02_R22",
-  "apkUrl": "https://raw.githubusercontent.com/hanakim2001/BYD-SEAL-Radio-AutoScan-Updates/main/byd-alb/BYD_ALB_01.01_02_R22.apk",
-  "sha256": "46f13973335665fdb4f9bad1045b995cb9849b0b349fc237db9992fb1e481f7b",
-  "changes": "R21 13장 화면 피드백 개선: 아이콘·시작 화면 보강, 도어 잠금/해제/트렁크 알림 4종 각각 한 줄, 설정 및 사용설명서 여백 조정. 실차 잠금·해제·트렁크 열림 검증 대기. T닫힘 미검증."
+  "versionCode": 1023,
+  "versionName": "01.01_02_R23",
+  "apkUrl": "https://raw.githubusercontent.com/hanakim2001/BYD-SEAL-Radio-AutoScan-Updates/main/byd-alb/BYD_ALB_01.01_02_R23.apk",
+  "sha256": "324ec641fb9e3f180d05d70713455dc4fd3d6eb4414c948cb31ea45469b742b5",
+  "changes": "R22 라이트·다크 12장 피드백: R20에 가까운 아이콘, 삼성 알림 글씨 대비, 위젯 미리보기, 자동제어 시간 저장·취소·기본값, 홈 바로가기·안전 안내 개선. 실차 검증 별도, T닫힘 미검증."
 }
