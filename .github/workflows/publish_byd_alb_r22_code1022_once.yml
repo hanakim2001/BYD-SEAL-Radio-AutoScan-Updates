@@ -1,0 +1,130 @@
+name: Publish BYD ALB R22 verified APK for in-app update
+run-name: BYD ALB R22 code1022 OTA publish once
+on:
+  push:
+    branches: [main]
+    paths:
+      - '.github/publish-byd-alb-r22-code1022-trigger'
+permissions:
+  contents: write
+concurrency:
+  group: byd-alb-r22-code1022-publish
+  cancel-in-progress: false
+jobs:
+  publish:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: true
+          fetch-depth: 2
+      - name: Verify approved one-shot trigger and R21 placeholder
+        shell: bash
+        run: |
+          set -euo pipefail
+          test "$GITHUB_REF_NAME" = "main"
+          test "$GITHUB_RUN_ATTEMPT" = "1"
+          test "$(head -n 1 .github/publish-byd-alb-r22-code1022-trigger)" = 'owner-approved:code1022:46f13973335665fdb4f9bad1045b995cb9849b0b349fc237db9992fb1e481f7b'
+          test "$(git diff --name-only HEAD^ HEAD)" = '.github/publish-byd-alb-r22-code1022-trigger'
+          test ! -f byd-alb/BYD_ALB_01.01_02_R22.apk
+          python3 - <<'PY'
+          import json
+          d=json.load(open('byd-alb/manifest.json'))
+          assert d['status']=='not-released'
+          assert d['packageName']=='com.seunghyun.bydautolock.test'
+          PY
+      - name: Download GitHub Actions artifact handoff and verify exact R22 binary
+        shell: bash
+        env:
+          ARTIFACT_URL: 'https://sdmntprjapaneast.oaiusercontent.com/files/00000000-ae58-8209-888a-1bf725be68b2/raw?se=2026-11-20T13%3A58%3A39Z&sp=r&sv=2026-06-06&sr=b&scid=b7cc60c7-c689-5ea1-87c4-0574d8b4077b&skoid=b1bca990-dcac-4c31-8ca1-ac563cf24c54&sktid=a48cca56-e6da-484e-a814-9c849652bcb3&skt=2026-11-20T04%3A07%3A41Z&ske=2026-11-21T04%3A07%3A41Z&sks=b&skv=2026-06-06&sig=bgX2qNE05dQX7Z8PkpEW8LPvPBTkeWfCPxwSkPF/JFg%3D'
+        run: |
+          set -euo pipefail
+          curl --fail --location --retry 2 --connect-timeout 12 --max-time 100 --silent --show-error "$ARTIFACT_URL" -o /tmp/alb-r22-evidence.zip
+          echo '12147cab43b313a2d785349fada64fbf31dba1b9671c139ce7ef23df357aa3b9  /tmp/alb-r22-evidence.zip' | sha256sum -c -
+          unzip -tq /tmp/alb-r22-evidence.zip
+          mkdir -p /tmp/alb-r22
+          unzip -q /tmp/alb-r22-evidence.zip -d /tmp/alb-r22
+          APK=/tmp/alb-r22/BYD_ALB_01.01_02_R22.apk
+          test -s "$APK"
+          echo '46f13973335665fdb4f9bad1045b995cb9849b0b349fc237db9992fb1e481f7b  /tmp/alb-r22/BYD_ALB_01.01_02_R22.apk' | sha256sum -c -
+          grep -Fq 'SOURCE_SHA=085ed2f8150e315cd7361ef7573252151d806aec' /tmp/alb-r22/BUILD_HEAD.txt
+          AAPT="$(find "$ANDROID_HOME/build-tools" -type f -name aapt | sort -V | tail -n 1)"
+          APKSIGNER="$(find "$ANDROID_HOME/build-tools" -type f -name apksigner | sort -V | tail -n 1)"
+          test -x "$AAPT"
+          test -x "$APKSIGNER"
+          "$AAPT" dump badging "$APK" > /tmp/alb-r22/recheck-package.txt
+          grep -Fq "package: name='com.seunghyun.bydautolock.test' versionCode='1022' versionName='01.01_02_R22'" /tmp/alb-r22/recheck-package.txt
+          "$APKSIGNER" verify --verbose --print-certs "$APK" > /tmp/alb-r22/recheck-signer.txt
+          grep -qi 'Verified using v2 scheme (APK Signature Scheme v2): true' /tmp/alb-r22/recheck-signer.txt
+          grep -qi '65637d09d45b6b05096c7831d92f65a039c6e3b06fdef6632601d7766ea05403' /tmp/alb-r22/recheck-signer.txt
+      - name: Publish verified ALB APK BINARY FIRST, without touching Audio or HMC
+        shell: bash
+        run: |
+          set -euo pipefail
+          cp /tmp/alb-r22/BYD_ALB_01.01_02_R22.apk byd-alb/BYD_ALB_01.01_02_R22.apk
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add byd-alb/BYD_ALB_01.01_02_R22.apk
+          git diff --cached --check
+          git commit -m 'Publish ALB verified R22 code1022 APK binary only [skip ci]'
+          git push origin HEAD:main
+      - name: Verify public HTTPS APK returns DIRECT 200 and exact checksum BEFORE manifest
+        shell: bash
+        run: |
+          set -euo pipefail
+          URL='https://raw.githubusercontent.com/hanakim2001/BYD-SEAL-Radio-AutoScan-Updates/main/byd-alb/BYD_ALB_01.01_02_R22.apk'
+          ok=0
+          for i in 1 2 3 4 5 6 7 8 9 10; do
+            if curl --proto '=https' --max-redirs 0 --fail --silent --show-error --max-time 35 -o /tmp/alb-r22-published.apk "$URL"; then
+              if echo '46f13973335665fdb4f9bad1045b995cb9849b0b349fc237db9992fb1e481f7b  /tmp/alb-r22-published.apk' | sha256sum -c -; then
+                ok=1; break
+              fi
+            fi
+            sleep 2
+          done
+          test "$ok" = 1
+      - name: Release version metadata LAST to enable R21 in-app update
+        shell: bash
+        run: |
+          set -euo pipefail
+          git fetch origin main
+          git rebase origin/main
+          python3 - <<'PY'
+          import json
+          from pathlib import Path
+          path=Path('byd-alb/manifest.json')
+          data=json.loads(path.read_text())
+          assert data['status']=='not-released'
+          assert data['packageName']=='com.seunghyun.bydautolock.test'
+          data.update({
+            'channel':'QA',
+            'status':'released',
+            'versionCode':1022,
+            'versionName':'01.01_02_R22',
+            'apkUrl':'https://raw.githubusercontent.com/hanakim2001/BYD-SEAL-Radio-AutoScan-Updates/main/byd-alb/BYD_ALB_01.01_02_R22.apk',
+            'sha256':'46f13973335665fdb4f9bad1045b995cb9849b0b349fc237db9992fb1e481f7b',
+            'changes':'R21 13장 화면 피드백 개선: 아이콘·시작 화면 보강, 도어 잠금/해제/트렁크 알림 4종 각각 한 줄, 설정 및 사용설명서 여백 조정. 실차 잠금·해제·트렁크 열림 검증 대기. T닫힘 미검증.'
+          })
+          data.pop('note',None)
+          data.pop('message',None)
+          path.write_text(json.dumps(data,ensure_ascii=False,indent=2)+'\n')
+          PY
+          git add byd-alb/manifest.json
+          git diff --cached --check
+          git commit -m 'Enable R21 in-app update to verified R22 code1022 [skip ci]'
+          git push origin HEAD:main
+      - name: Verify manifest and public APK still match
+        shell: bash
+        run: |
+          set -euo pipefail
+          URL='https://raw.githubusercontent.com/hanakim2001/BYD-SEAL-Radio-AutoScan-Updates/main/byd-alb/manifest.json'
+          ok=0
+          for i in 1 2 3 4 5 6; do
+            if curl --proto '=https' --max-redirs 0 --fail -sS --max-time 15 "$URL" -o /tmp/alb-r22-public-manifest.json; then
+              if python3 -c "import json;d=json.load(open('/tmp/alb-r22-public-manifest.json'));assert d['versionCode']==1022 and d['packageName']=='com.seunghyun.bydautolock.test' and d['sha256']=='46f13973335665fdb4f9bad1045b995cb9849b0b349fc237db9992fb1e481f7b'": ok=1; break
+            fi
+            sleep 2
+          done
+          test "$ok" = 1
+          echo 'R22 ALB UPDATE PUBLIC APK + MANIFEST SHA VERIFIED — Android in-app user approval still pending'
