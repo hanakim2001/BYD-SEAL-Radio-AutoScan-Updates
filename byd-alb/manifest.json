@@ -1,0 +1,8 @@
+{
+  "packageName": "com.seunghyun.bydautolock.test",
+  "channel": "QA",
+  "status": "not-released",
+  "message": "BYD ALB 차기 버전 공개 배포 준비 중",
+  "updatedAt": "2026-11-20",
+  "note": "Only metadata placeholder; NO APK/credentials/source are published. Replace after signed release QA."
+}
