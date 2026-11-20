@@ -1,8 +1,11 @@
 {
   "packageName": "com.seunghyun.bydautolock.test",
   "channel": "QA",
-  "status": "not-released",
-  "message": "BYD ALB 차기 버전 공개 배포 준비 중",
+  "status": "released",
   "updatedAt": "2026-11-20",
-  "note": "Only metadata placeholder; NO APK/credentials/source are published. Replace after signed release QA."
+  "versionCode": 1022,
+  "versionName": "01.01_02_R22",
+  "apkUrl": "https://raw.githubusercontent.com/hanakim2001/BYD-SEAL-Radio-AutoScan-Updates/main/byd-alb/BYD_ALB_01.01_02_R22.apk",
+  "sha256": "46f13973335665fdb4f9bad1045b995cb9849b0b349fc237db9992fb1e481f7b",
+  "changes": "R21 13장 화면 피드백 개선: 아이콘·시작 화면 보강, 도어 잠금/해제/트렁크 알림 4종 각각 한 줄, 설정 및 사용설명서 여백 조정. 실차 잠금·해제·트렁크 열림 검증 대기. T닫힘 미검증."
 }
