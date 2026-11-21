@@ -1,0 +1,5 @@
+owner-approved:code1028:8bf5a0374ee014cae73cac9071132666b9be2c05d9ace6287aca08f5261ed28f
+source-run: https://github.com/hanakim2001/BYD-AutoLock-SEAL/actions/runs/44900159588
+source-head: 612bacdcfd8c72f7acf30c6ffa1d833ad0b2e353
+R28 private signed QA only; publish APK binary, verify HTTPS checksum, then manifest.
+No modification to BYD Audio or HMC release paths.
