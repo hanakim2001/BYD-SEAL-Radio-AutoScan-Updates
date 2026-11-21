@@ -1,0 +1,134 @@
+name: Publish BYD ALB R26 verified APK for in-app update
+run-name: BYD ALB R26 code1026 OTA publish once
+on:
+  push:
+    branches: [main]
+    paths:
+      - '.github/publish-byd-alb-r26-code1026-trigger'
+permissions:
+  contents: write
+concurrency:
+  group: byd-alb-r26-code1026-publish
+  cancel-in-progress: false
+jobs:
+  publish:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: true
+          fetch-depth: 2
+      - name: Verify approved one-shot trigger and R24 released manifest baseline
+        shell: bash
+        run: |
+          set -euo pipefail
+          test "$GITHUB_REF_NAME" = "main"
+          test "$GITHUB_RUN_ATTEMPT" = "1"
+          test "$(head -n 1 .github/publish-byd-alb-r26-code1026-trigger)" = 'owner-approved:code1026:a7f1010571536dcdb447b510860f98abe9fef157bcac48be58bc21d75eada589'
+          test "$(git diff --name-only HEAD^ HEAD)" = '.github/publish-byd-alb-r26-code1026-trigger'
+          test ! -f byd-alb/BYD_ALB_01.01_02_R26.apk
+          python3 - <<'PY'
+          import json
+          d=json.load(open('byd-alb/manifest.json'))
+          assert d['status']=='released'
+          assert d['versionCode']==1025
+          assert d['packageName']=='com.seunghyun.bydautolock.test'
+          PY
+      - name: Download GitHub Actions artifact handoff and verify exact R26 binary
+        shell: bash
+        env:
+          ARTIFACT_URL: 'https://sdmntprindiasocentral.oaiusercontent.com/files/00000000-9754-8211-8a65-97ad428be4f8/raw?se=2026-11-21T10%3A04%3A22Z&sp=r&sv=2026-06-06&sr=b&scid=1ad168b9-709c-5db5-a8a4-1025f3066dc9&skoid=b1bca990-dcac-4c31-8ca1-ac563cf24c54&sktid=a48cca56-e6da-484e-a814-9c849652bcb3&skt=2026-11-21T04%3A54%3A50Z&ske=2026-11-22T04%3A54%3A50Z&sks=b&skv=2026-06-06&sig=Q9b2z/vuCHZQ4i2SR/rULmktkHpbHTndVM7caol6pco%3D'
+        run: |
+          set -euo pipefail
+          curl --fail --location --retry 2 --connect-timeout 12 --max-time 100 --silent --show-error "$ARTIFACT_URL" -o /tmp/alb-r26-evidence.zip
+          echo '92deea907e692a5ca93ab906aa262dc63efae8df3ab0a246c691b2150df7fd9e  /tmp/alb-r26-evidence.zip' | sha256sum -c -
+          unzip -tq /tmp/alb-r26-evidence.zip
+          mkdir -p /tmp/alb-r26
+          unzip -q /tmp/alb-r26-evidence.zip -d /tmp/alb-r26
+          APK=/tmp/alb-r26/BYD_ALB_01.01_02_R26.apk
+          test -s "$APK"
+          echo 'a7f1010571536dcdb447b510860f98abe9fef157bcac48be58bc21d75eada589  /tmp/alb-r26/BYD_ALB_01.01_02_R26.apk' | sha256sum -c -
+          grep -Fq 'SOURCE_SHA=83321c866df130a9229074dc9e7d21b6cf426f21' /tmp/alb-r26/BUILD_HEAD.txt
+          AAPT="$(find "$ANDROID_HOME/build-tools" -type f -name aapt | sort -V | tail -n 1)"
+          APKSIGNER="$(find "$ANDROID_HOME/build-tools" -type f -name apksigner | sort -V | tail -n 1)"
+          test -x "$AAPT"
+          test -x "$APKSIGNER"
+          "$AAPT" dump badging "$APK" > /tmp/alb-r26/recheck-package.txt
+          grep -Fq "package: name='com.seunghyun.bydautolock.test' versionCode='1026' versionName='01.01_02_R26'" /tmp/alb-r26/recheck-package.txt
+          "$APKSIGNER" verify --verbose --print-certs "$APK" > /tmp/alb-r26/recheck-signer.txt
+          grep -qi 'Verified using v2 scheme (APK Signature Scheme v2): true' /tmp/alb-r26/recheck-signer.txt
+          grep -qi '65637d09d45b6b05096c7831d92f65a039c6e3b06fdef6632601d7766ea05403' /tmp/alb-r26/recheck-signer.txt
+      - name: Publish verified ALB APK BINARY FIRST, without touching Audio or HMC
+        shell: bash
+        run: |
+          set -euo pipefail
+          cp /tmp/alb-r26/BYD_ALB_01.01_02_R26.apk byd-alb/BYD_ALB_01.01_02_R26.apk
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add byd-alb/BYD_ALB_01.01_02_R26.apk
+          git diff --cached --check
+          git commit -m 'Publish ALB verified R26 code1026 APK binary only [skip ci]'
+          git push origin HEAD:main
+      - name: Verify public HTTPS APK returns DIRECT 200 and exact checksum BEFORE manifest
+        shell: bash
+        run: |
+          set -euo pipefail
+          URL='https://raw.githubusercontent.com/hanakim2001/BYD-SEAL-Radio-AutoScan-Updates/main/byd-alb/BYD_ALB_01.01_02_R26.apk'
+          ok=0
+          for i in 1 2 3 4 5 6 7 8 9 10; do
+            if curl --proto '=https' --max-redirs 0 --fail --silent --show-error --max-time 35 -o /tmp/alb-r26-published.apk "$URL"; then
+              if echo 'a7f1010571536dcdb447b510860f98abe9fef157bcac48be58bc21d75eada589  /tmp/alb-r26-published.apk' | sha256sum -c -; then
+                ok=1; break
+              fi
+            fi
+            sleep 2
+          done
+          test "$ok" = 1
+      - name: Release version metadata LAST to enable R24 in-app update
+        shell: bash
+        run: |
+          set -euo pipefail
+          git fetch origin main
+          git rebase origin/main
+          python3 - <<'PY'
+          import json
+          from pathlib import Path
+          path=Path('byd-alb/manifest.json')
+          data=json.loads(path.read_text())
+          assert data['status']=='released'
+          assert data['versionCode']==1025
+          assert data['packageName']=='com.seunghyun.bydautolock.test'
+          data.update({
+            'channel':'QA',
+            'status':'released',
+            'versionCode':1026,
+            'versionName':'01.01_02_R26',
+            'apkUrl':'https://raw.githubusercontent.com/hanakim2001/BYD-SEAL-Radio-AutoScan-Updates/main/byd-alb/BYD_ALB_01.01_02_R26.apk',
+            'sha256':'a7f1010571536dcdb447b510860f98abe9fef157bcac48be58bc21d75eada589',
+            'changes':'R26: BYD 아이콘 구형 흰 모서리 자산 제거와 안전영역 보정, 삼성 라이트·다크 알림 분리 및 앱 바로가기, 48dp 버튼과 하단 슬라이더 개선, T열림 원터치 유지, 명령 미전송 안내. T닫기·BYD 서버는 미검증.'
+          })
+          data.pop('note',None)
+          data.pop('message',None)
+          path.write_text(json.dumps(data,ensure_ascii=False,indent=2)+'\n')
+          PY
+          git add byd-alb/manifest.json
+          git diff --cached --check
+          git commit -m 'Enable R24 in-app update to verified R26 code1026 [skip ci]'
+          git push origin HEAD:main
+      - name: Verify manifest matches verified public R26 binary
+        shell: bash
+        run: |
+          set -euo pipefail
+          URL='https://raw.githubusercontent.com/hanakim2001/BYD-SEAL-Radio-AutoScan-Updates/main/byd-alb/manifest.json'
+          for i in 1 2 3 4 5 6 7 8; do
+            if curl --proto '=https' --max-redirs 0 --fail -sS --max-time 15 "$URL" -o /tmp/alb-r26-public-manifest.json; then
+              if python3 -c "import json; d=json.load(open('/tmp/alb-r26-public-manifest.json')); assert d['versionCode']==1026 and d['packageName']=='com.seunghyun.bydautolock.test' and d['sha256']=='a7f1010571536dcdb447b510860f98abe9fef157bcac48be58bc21d75eada589'"; then
+                echo 'R26 public manifest and APK hash match'
+                exit 0
+              fi
+            fi
+            sleep 2
+          done
+          echo 'R26 public manifest verification failure' >&2
+          exit 1
