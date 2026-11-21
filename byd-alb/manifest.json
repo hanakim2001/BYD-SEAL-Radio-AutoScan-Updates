@@ -3,9 +3,9 @@
   "channel": "QA",
   "status": "released",
   "updatedAt": "2026-11-21",
-  "versionCode": 1025,
-  "versionName": "01.01_02_R25",
-  "apkUrl": "https://raw.githubusercontent.com/hanakim2001/BYD-SEAL-Radio-AutoScan-Updates/main/byd-alb/BYD_ALB_01.01_02_R25.apk",
-  "sha256": "c6ab75e199a79c2fd7b6658ce6dc82266e1f3a357eb05a6bdab5ab508cb5f1b7",
-  "changes": "R25: BYD 원본 아이콘 크기 보정, 삼성 라이트·다크 알림 제목과 상태 문구 고대비 패널, 자동제어 마지막 슬라이더 화면 여백, T열림 위젯·루틴·알림창 원터치. 트렁크 닫힘은 미검증 별도 연구."
+  "versionCode": 1026,
+  "versionName": "01.01_02_R26",
+  "apkUrl": "https://raw.githubusercontent.com/hanakim2001/BYD-SEAL-Radio-AutoScan-Updates/main/byd-alb/BYD_ALB_01.01_02_R26.apk",
+  "sha256": "a7f1010571536dcdb447b510860f98abe9fef157bcac48be58bc21d75eada589",
+  "changes": "R26: BYD 아이콘 구형 흰 모서리 자산 제거와 안전영역 보정, 삼성 라이트·다크 알림 분리 및 앱 바로가기, 48dp 버튼과 하단 슬라이더 개선, T열림 원터치 유지, 명령 미전송 안내. T닫기·BYD 서버는 미검증."
 }
