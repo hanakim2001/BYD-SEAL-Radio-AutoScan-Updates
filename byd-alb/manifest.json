@@ -3,9 +3,9 @@
   "channel": "QA",
   "status": "released",
   "updatedAt": "2026-11-21",
-  "versionCode": 1024,
-  "versionName": "01.01_02_R24",
-  "apkUrl": "https://raw.githubusercontent.com/hanakim2001/BYD-SEAL-Radio-AutoScan-Updates/main/byd-alb/BYD_ALB_01.01_02_R24.apk",
-  "sha256": "adc013ccbcaf6b4a612dcd0ac961a64b5c3084dcbd652161956bc7f0923abb5e",
-  "changes": "R24: 원본 BYD 아이콘 흰 가장자리 정리와 크기 보정, 삼성 라이트·다크 알림 가독성 개선, 자동제어 시간 저장·취소·기본값 하단 고정, 소리·진동 3+3배치, 사용설명서 최하단 여백, 루틴·위젯 도어 잠금·해제 원터치. 트렁크 닫힘은 미검증 별도 연구."
+  "versionCode": 1025,
+  "versionName": "01.01_02_R25",
+  "apkUrl": "https://raw.githubusercontent.com/hanakim2001/BYD-SEAL-Radio-AutoScan-Updates/main/byd-alb/BYD_ALB_01.01_02_R25.apk",
+  "sha256": "c6ab75e199a79c2fd7b6658ce6dc82266e1f3a357eb05a6bdab5ab508cb5f1b7",
+  "changes": "R25: BYD 원본 아이콘 크기 보정, 삼성 라이트·다크 알림 제목과 상태 문구 고대비 패널, 자동제어 마지막 슬라이더 화면 여백, T열림 위젯·루틴·알림창 원터치. 트렁크 닫힘은 미검증 별도 연구."
 }
