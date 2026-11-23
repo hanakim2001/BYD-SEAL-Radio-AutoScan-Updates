@@ -1,0 +1,135 @@
+name: Publish verified BYD ALB R34 QA for existing in-app updater
+run-name: R34 code1034 app-internal QA delivery - verified APK then manifest
+on:
+  push:
+    branches: [main]
+    paths:
+      - '.github/workflows/publish_byd_alb_r34_code1034_once.yml'
+permissions:
+  contents: write
+concurrency:
+  group: byd-alb-r34-code1034-publish
+  cancel-in-progress: false
+jobs:
+  publish:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - name: Checkout only existing BYD ALB public QA update channel
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 2
+          persist-credentials: true
+      - name: Verify single owner-approved R34 QA release trigger
+        shell: bash
+        run: |
+          set -euo pipefail
+          test "$GITHUB_REF_NAME" = "main"
+          test "$GITHUB_RUN_ATTEMPT" = "1"
+          test "$(git diff --name-only HEAD^ HEAD)" = ".github/workflows/publish_byd_alb_r34_code1034_once.yml"
+          test ! -f byd-alb/BYD_ALB_01.01_02_R34.apk
+          python3 - <<'PY'
+          import json
+          d=json.load(open("byd-alb/manifest.json"))
+          assert d["status"]=="released" and d["channel"]=="QA"
+          assert d["versionCode"]==1028 and d["packageName"]=="com.seunghyun.bydautolock.test"
+          print("Prior BYD ALB QA R28 manifest verified")
+          PY
+      - name: Fetch ephemeral owner-approved R34 artifact and independently verify bytes
+        shell: bash
+        env:
+          ARTIFACT_URL: 'https://sdmntprjapaneast.oaiusercontent.com/files/00000000-5a40-8209-87da-6d22f2296276/raw?se=2026-11-23T00%3A23%3A16Z&sp=r&sv=2026-06-06&sr=b&scid=cb577294-40a6-5a4d-9288-aa2518891374&skoid=b1bca990-dcac-4c31-8ca1-ac563cf24c54&sktid=a48cca56-e6da-484e-a814-9c849652bcb3&skt=2026-11-22T23%3A57%3A32Z&ske=2026-11-23T23%3A57%3A32Z&sks=b&skv=2026-06-06&sig=f2uPOSNm4in2%2BvOjK7fEqf6hZmrubdHqR4kujPgVmoM%3D'
+        run: |
+          set -euo pipefail
+          curl --proto '=https' --fail --location --retry 2 --connect-timeout 12 --max-time 100 --silent --show-error "$ARTIFACT_URL" -o /tmp/alb-r34-artifact.zip
+          echo '2978f18c33499a595fcf02882cb8d6861fd3f6d5e66e3475b99d8733aedbe5bc  /tmp/alb-r34-artifact.zip' | sha256sum -c -
+          unzip -tq /tmp/alb-r34-artifact.zip
+          mkdir -p /tmp/alb-r34
+          unzip -q /tmp/alb-r34-artifact.zip -d /tmp/alb-r34
+          APK=/tmp/alb-r34/BYD_ALB_01.01_02_R34.apk
+          test -s "$APK"
+          echo '58209f8b510af7a95b825c3b7fc177076d600534dcb80d0f7b0ff0a438e37b90  /tmp/alb-r34/BYD_ALB_01.01_02_R34.apk' | sha256sum -c -
+          grep -Fq 'SOURCE_SHA=c1378f0f98bb41873e7c22b6c295ba0cc5b41ffe' /tmp/alb-r34/BUILD_INFO.txt
+          grep -Fq 'ACTIONS_RUN=45087534480' /tmp/alb-r34/BUILD_INFO.txt
+          grep -Fq 'VERSION_CODE=1034' /tmp/alb-r34/BUILD_INFO.txt
+          grep -Fq 'CHANNEL=QA_ONLY' /tmp/alb-r34/BUILD_INFO.txt
+          AAPT="$(find "$ANDROID_HOME/build-tools" -type f -name aapt | sort -V | tail -n 1)"
+          APKSIGNER="$(find "$ANDROID_HOME/build-tools" -type f -name apksigner | sort -V | tail -n 1)"
+          test -x "$AAPT" && test -x "$APKSIGNER"
+          "$AAPT" dump badging "$APK" > /tmp/alb-r34/check-badging.txt
+          grep -Fq "package: name='com.seunghyun.bydautolock.test' versionCode='1034' versionName='01.01_02_R34'" /tmp/alb-r34/check-badging.txt
+          "$APKSIGNER" verify --verbose --print-certs "$APK" > /tmp/alb-r34/check-cert.txt
+          grep -Fiq '65637d09d45b6b05096c7831d92f65a039c6e3b06fdef6632601d7766ea05403' /tmp/alb-r34/check-cert.txt
+          echo "R34 artifact and QA signer independently verified PASS"
+      - name: Publish only BYD ALB R34 APK binary FIRST
+        shell: bash
+        run: |
+          set -euo pipefail
+          cp /tmp/alb-r34/BYD_ALB_01.01_02_R34.apk byd-alb/BYD_ALB_01.01_02_R34.apk
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add byd-alb/BYD_ALB_01.01_02_R34.apk
+          git diff --cached --check
+          git commit -m 'Publish only BYD ALB signed R34 QA APK binary [skip ci]'
+          git push origin HEAD:main
+      - name: Verify public HTTPS returns direct 200 and exact APK SHA before manifest
+        shell: bash
+        run: |
+          set -euo pipefail
+          URL='https://raw.githubusercontent.com/hanakim2001/BYD-SEAL-Radio-AutoScan-Updates/main/byd-alb/BYD_ALB_01.01_02_R34.apk'
+          ok=0
+          for i in 1 2 3 4 5 6 7 8 9 10 11 12; do
+            if curl --proto '=https' --max-redirs 0 --fail --silent --show-error --max-time 35 -o /tmp/alb-r34-published.apk "$URL"; then
+              if echo '58209f8b510af7a95b825c3b7fc177076d600534dcb80d0f7b0ff0a438e37b90  /tmp/alb-r34-published.apk' | sha256sum -c -; then
+                ok=1; break
+              fi
+            fi
+            sleep 2
+          done
+          test "$ok" = 1
+          echo 'R34 public APK verified before manifest'
+      - name: Publish QA manifest LAST (R28 to R34, no Audio or HMC changes)
+        shell: bash
+        run: |
+          set -euo pipefail
+          git fetch origin main
+          git rebase origin/main
+          python3 - <<'PY'
+          import json
+          from pathlib import Path
+          path=Path("byd-alb/manifest.json")
+          d=json.loads(path.read_text())
+          assert d["status"]=="released" and d["channel"]=="QA"
+          assert d["versionCode"]==1028 and d["packageName"]=="com.seunghyun.bydautolock.test"
+          d.update({
+              "channel":"QA",
+              "status":"released",
+              "updatedAt":"2026-11-23",
+              "versionCode":1034,
+              "versionName":"01.01_02_R34",
+              "apkUrl":"https://raw.githubusercontent.com/hanakim2001/BYD-SEAL-Radio-AutoScan-Updates/main/byd-alb/BYD_ALB_01.01_02_R34.apk",
+              "sha256":"58209f8b510af7a95b825c3b7fc177076d600534dcb80d0f7b0ff0a438e37b90",
+              "changes":"R34 비공개 QA: BLE 재연결 전 광고 신호 수집 개선 후보 반영, 기존 잠금/해제 설정과 QR키/위젯 유지. 오전 05:40 자동 해제 실패 원인은 로그 범위 밖으로 미확정이며 실차 해결 미검증. 트렁크 닫힘과 BYD 서버 원격 제어는 계속 보류."
+          })
+          path.write_text(json.dumps(d,ensure_ascii=False,indent=2)+"\n")
+          PY
+          git add byd-alb/manifest.json
+          git diff --cached --check
+          git commit -m 'Enable existing ALB in-app QA updater for R34 code1034 [skip ci]'
+          git push origin HEAD:main
+      - name: Verify public in-app manifest points only to verified R34 APK
+        shell: bash
+        run: |
+          set -euo pipefail
+          URL='https://raw.githubusercontent.com/hanakim2001/BYD-SEAL-Radio-AutoScan-Updates/main/byd-alb/manifest.json'
+          ok=0
+          for i in 1 2 3 4 5 6 7 8 9 10; do
+            if curl --proto '=https' --max-redirs 0 --fail -sS --max-time 15 "$URL" -o /tmp/alb-r34-public-manifest.json; then
+              if python3 -c 'import json;d=json.load(open("/tmp/alb-r34-public-manifest.json"));assert d["versionCode"]==1034 and d["packageName"]=="com.seunghyun.bydautolock.test" and d["sha256"]=="58209f8b510af7a95b825c3b7fc177076d600534dcb80d0f7b0ff0a438e37b90" and d["apkUrl"]=="https://raw.githubusercontent.com/hanakim2001/BYD-SEAL-Radio-AutoScan-Updates/main/byd-alb/BYD_ALB_01.01_02_R34.apk"'; then
+                ok=1; break
+              fi
+            fi
+            sleep 2
+          done
+          test "$ok" = 1
+          echo "BYD ALB R34 in-app QA OTA manifest VERIFIED"
