@@ -3,9 +3,9 @@
   "channel": "QA",
   "status": "released",
   "updatedAt": "2026-11-23",
-  "versionCode": 1034,
-  "versionName": "01.01_02_R34",
-  "apkUrl": "https://raw.githubusercontent.com/hanakim2001/BYD-SEAL-Radio-AutoScan-Updates/main/byd-alb/BYD_ALB_01.01_02_R34.apk",
-  "sha256": "58209f8b510af7a95b825c3b7fc177076d600534dcb80d0f7b0ff0a438e37b90",
-  "changes": "R34 비공개 QA: BLE 재연결 전 광고 신호 수집 개선 후보 반영, 기존 잠금/해제 설정과 QR키/위젯 유지. 오전 05:40 자동 해제 실패 원인은 로그 범위 밖으로 미확정이며 실차 해결 미검증. 트렁크 닫힘과 BYD 서버 원격 제어는 계속 보류."
+  "versionCode": 1035,
+  "versionName": "01.01_02_R35",
+  "apkUrl": "https://raw.githubusercontent.com/hanakim2001/BYD-SEAL-Radio-AutoScan-Updates/main/byd-alb/BYD_ALB_01.01_02_R35.apk",
+  "sha256": "3551cbacd39668e279318a7c1ddf00dc6539c3dcae42e53ab41afcb12844c4af",
+  "changes": "R35 사용자 QA: 안전설정의 휴대폰 권한 카드를 위로 이동하고 카드 간격/내비게이션 여백 개선. 메인 밀어서 해제 및 해제 위젯 자물쇠 고리를 명확히 열린 초록색 도형으로 변경. 숨김 진단에 기존 인증 기반 읽기 전용 서버 차량 기능 목록 조회와 중복 응답 방지 추가. QR/토큰/BLE 키 갱신이나 차량 원격제어 없음. 차량 자체 재잠금 후 자동 재열림, 한국형 트렁크 닫힘, 실차 서버 최신값은 계속 미검증."
 }
