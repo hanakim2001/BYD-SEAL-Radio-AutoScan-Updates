@@ -2,10 +2,10 @@
   "packageName": "com.seunghyun.bydautolock.test",
   "channel": "QA",
   "status": "released",
-  "updatedAt": "2026-11-24",
-  "versionCode": 1037,
-  "versionName": "01.01_02_R37",
-  "apkUrl": "https://raw.githubusercontent.com/hanakim2001/BYD-SEAL-Radio-AutoScan-Updates/main/byd-alb/BYD_ALB_01.01_02_R37.apk",
-  "sha256": "a6aa3f412158125ebf0c6c8549e58c3285d170e701c55aacd1e2f902cc530bec",
-  "changes": "R37 긴급 BLE 복구 QA: 연결 초기화 실패 후 재연결 상태 전환 수정, 연결 응답 누락 시 65초 연결 복구 보호 추가. 기존 QR·BLE 키·설정·앱 내 업데이트 유지. 실차 잠금·해제·트렁크 열림 및 자동 접근 복구 확인 필요. 트렁크 닫힘과 실제 서버값은 미해결."
+  "updatedAt": "2026-11-25",
+  "versionCode": 1039,
+  "versionName": "01.01_02_R39",
+  "apkUrl": "https://raw.githubusercontent.com/hanakim2001/BYD-SEAL-Radio-AutoScan-Updates/main/byd-alb/BYD_ALB_01.01_02_R39.apk",
+  "sha256": "94950a4fc7ea1bd96ec46561b762d7e6694de69da1e4b33d95479bbe6ce951cc",
+  "changes": "R39 BLE 안정화 QA: 신호 측정 요청을 한 번에 하나만 처리해 중복 대기열 방지. R37 연결 복구 및 기존 RSSI·시간·QR·키·설정 유지. 실차 자동 잠금·해제 및 수동 제어 비교 필요. 자체 재잠금·트렁크 닫힘·실제 서버값은 미해결."
 }
