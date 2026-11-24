@@ -3,9 +3,9 @@
   "channel": "QA",
   "status": "released",
   "updatedAt": "2026-11-24",
-  "versionCode": 1036,
-  "versionName": "01.01_02_R36",
-  "apkUrl": "https://raw.githubusercontent.com/hanakim2001/BYD-SEAL-Radio-AutoScan-Updates/main/byd-alb/BYD_ALB_01.01_02_R36.apk",
-  "sha256": "88965e44cf5ec2f314e3e0ca31754ac6568e6f552814e0881b131ea644b12512",
-  "changes": "R36 사용자 QA: 최초 접근 BLE 세션 안정화, 제조사 자체 재잠금 3분 관찰 종료 개선, RSSI 열린 자물쇠 수정, 기존 인증 기반 읽기 전용 서버 상태 2초·15초 비교 및 차량·응답 일치 검사. 실제 서버 최신 SOC/ODO와 재잠금 후 재해제는 실차 검증 필요. 트렁크 닫힘 미해결·비송신. 기존 QR/토큰/BLE 키 및 설정 유지."
+  "versionCode": 1037,
+  "versionName": "01.01_02_R37",
+  "apkUrl": "https://raw.githubusercontent.com/hanakim2001/BYD-SEAL-Radio-AutoScan-Updates/main/byd-alb/BYD_ALB_01.01_02_R37.apk",
+  "sha256": "a6aa3f412158125ebf0c6c8549e58c3285d170e701c55aacd1e2f902cc530bec",
+  "changes": "R37 긴급 BLE 복구 QA: 연결 초기화 실패 후 재연결 상태 전환 수정, 연결 응답 누락 시 65초 연결 복구 보호 추가. 기존 QR·BLE 키·설정·앱 내 업데이트 유지. 실차 잠금·해제·트렁크 열림 및 자동 접근 복구 확인 필요. 트렁크 닫힘과 실제 서버값은 미해결."
 }
