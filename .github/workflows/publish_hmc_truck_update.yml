@@ -82,16 +82,17 @@ jobs:
               r2_records=[n for n in archive.namelist() if n.endswith("HMC_3.4.1_322_R2_PROVENANCE.json")]
               r3_records=[n for n in archive.namelist() if n.endswith("HMC_3.4.1_323_R3_PROVENANCE.json")]
               r4_records=[n for n in archive.namelist() if n.endswith("HMC_3.4.1_324_R4_PROVENANCE.json")]
-              records=legacy_records+r2_records+r3_records+r4_records
+              r5_records=[n for n in archive.namelist() if n.endswith("HMC_3.4.1_325_R5_PROVENANCE.json")]
+              records=legacy_records+r2_records+r3_records+r4_records+r5_records
               candidates=[n for n in archive.namelist() if n.endswith("BUILD_INFO.txt")]
               assert len(apks)==1, "Ambiguous release APK"
               if len(records)==1 and not candidates:
                   provenance=json.loads(archive.read(records[0]))
-                  if r2_records or r3_records or r4_records:
+                  if r2_records or r3_records or r4_records or r5_records:
                       # R2, R3 and the owner-approved R4 must each be signed,
                       # source-bound FIELD DEMO trials, never a FINAL release.
-                      assert len(r2_records)+len(r3_records)+len(r4_records)==1 and not legacy_records, "Ambiguous trial evidence"
-                      trial_code=322 if r2_records else (323 if r3_records else 324)
+                      assert len(r2_records)+len(r3_records)+len(r4_records)+len(r5_records)==1 and not legacy_records, "Ambiguous trial evidence"
+                      trial_code=322 if r2_records else (323 if r3_records else (324 if r4_records else 325))
                       assert int(os.environ["VERSION_CODE"])==trial_code, "Trial version mismatch"
                       assert provenance.get("trialOnly") is True, "Must remain a trial"
                       assert provenance.get("finalRelease") is False, "Trial cannot be FINAL"

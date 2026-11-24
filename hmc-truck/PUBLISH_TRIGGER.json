@@ -1,0 +1,11 @@
+{
+  "artifactUrl": "https://sdmntprjapaneast.oaiusercontent.com/files/00000000-0cf4-8209-a37c-0ae2733ac697/raw?se=2026-11-24T03%3A20%3A38Z&sp=r&sv=2026-06-06&sr=b&scid=2e9fd287-944a-5ba3-80dc-6efd1d514a5f&skoid=b1bca990-dcac-4c31-8ca1-ac563cf24c54&sktid=a48cca56-e6da-484e-a814-9c849652bcb3&skt=2026-11-24T00%3A03%3A08Z&ske=2026-11-25T00%3A03%3A08Z&sks=b&skv=2026-06-06&sig=hal17epbKjlvGHOQAT9Yhp4rV8M3lhnF0jBnrnn7BGk%3D",
+  "sha256": "562bdb1642417139c3248f7fbd854f2faa766d857c7866e288e8b5777462b026",
+  "versionName": "3.4.1",
+  "versionCode": 325,
+  "sourceCommit": "171207b0de0a153072be0d2c87607d64f078a2a8",
+  "expectedSignerCertificateSha256": "8a3441a39d2ca66e0c65bd31bcef6f61f2d84730277fa6abd43990f26babafe8",
+  "previousVersionCode": 324,
+  "previousSha256": "bc48ab714094c821e642b57dcc2bdcf015263faafb4650c203e306822f762e86",
+  "notes": "HMC Truck code325 R5 smartphone FIELD TRIAL: saved-start receipt window, shared receipt-date handling for HOME/ETA/STAT, OTP replay guard. All actual device gates pending. JIS read-only, remote shared state disabled, not FINAL."
+}
