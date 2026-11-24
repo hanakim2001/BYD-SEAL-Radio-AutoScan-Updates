@@ -2,10 +2,10 @@
   "packageName": "com.seunghyun.bydautolock.test",
   "channel": "QA",
   "status": "released",
-  "updatedAt": "2026-11-23",
-  "versionCode": 1035,
-  "versionName": "01.01_02_R35",
-  "apkUrl": "https://raw.githubusercontent.com/hanakim2001/BYD-SEAL-Radio-AutoScan-Updates/main/byd-alb/BYD_ALB_01.01_02_R35.apk",
-  "sha256": "3551cbacd39668e279318a7c1ddf00dc6539c3dcae42e53ab41afcb12844c4af",
-  "changes": "R35 사용자 QA: 안전설정의 휴대폰 권한 카드를 위로 이동하고 카드 간격/내비게이션 여백 개선. 메인 밀어서 해제 및 해제 위젯 자물쇠 고리를 명확히 열린 초록색 도형으로 변경. 숨김 진단에 기존 인증 기반 읽기 전용 서버 차량 기능 목록 조회와 중복 응답 방지 추가. QR/토큰/BLE 키 갱신이나 차량 원격제어 없음. 차량 자체 재잠금 후 자동 재열림, 한국형 트렁크 닫힘, 실차 서버 최신값은 계속 미검증."
+  "updatedAt": "2026-11-24",
+  "versionCode": 1036,
+  "versionName": "01.01_02_R36",
+  "apkUrl": "https://raw.githubusercontent.com/hanakim2001/BYD-SEAL-Radio-AutoScan-Updates/main/byd-alb/BYD_ALB_01.01_02_R36.apk",
+  "sha256": "88965e44cf5ec2f314e3e0ca31754ac6568e6f552814e0881b131ea644b12512",
+  "changes": "R36 사용자 QA: 최초 접근 BLE 세션 안정화, 제조사 자체 재잠금 3분 관찰 종료 개선, RSSI 열린 자물쇠 수정, 기존 인증 기반 읽기 전용 서버 상태 2초·15초 비교 및 차량·응답 일치 검사. 실제 서버 최신 SOC/ODO와 재잠금 후 재해제는 실차 검증 필요. 트렁크 닫힘 미해결·비송신. 기존 QR/토큰/BLE 키 및 설정 유지."
 }
