@@ -1,0 +1,149 @@
+name: Publish BYD ALB R36 signed QA via existing in-app update
+run-name: R36 code1036 verified owner QA APK binary FIRST then public manifest LAST
+on:
+  push:
+    branches: [main]
+    paths:
+      - '.github/workflows/publish_byd_alb_r36_code1036_once.yml'
+permissions:
+  contents: write
+concurrency:
+  group: byd-alb-r36-code1036-publish-owner-once
+  cancel-in-progress: false
+jobs:
+  publish:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - name: Checkout existing public BYD ALB QA channel only
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 2
+          persist-credentials: true
+      - name: Verify prior R35 released QA and owner one-shot scope
+        shell: bash
+        run: |
+          set -euo pipefail
+          test "$GITHUB_REF_NAME" = 'main'
+          test "$GITHUB_RUN_ATTEMPT" = '1'
+          test "$(git rev-parse HEAD^)" = '573a760d4503bea5f55f0482fd859116cbb53f31'
+          test "$(git diff --name-only HEAD^ HEAD)" = '.github/workflows/publish_byd_alb_r36_code1036_once.yml'
+          test ! -e byd-alb/BYD_ALB_01.01_02_R36.apk
+          python3 - <<'PY'
+          import json
+          d=json.load(open('byd-alb/manifest.json'))
+          assert d['status']=='released' and d['channel']=='QA'
+          assert d['packageName']=='com.seunghyun.bydautolock.test'
+          assert d['versionCode']==1035 and d['versionName']=='01.01_02_R35'
+          assert d['sha256']=='3551cbacd39668e279318a7c1ddf00dc6539c3dcae42e53ab41afcb12844c4af'
+          PY
+      - name: Fetch immutable R36 owner QA artifact and verify zip + signed APK
+        shell: bash
+        env:
+          ARTIFACT_URL: 'https://sdmntprjapaneast.oaiusercontent.com/files/00000000-f2d4-8209-94d8-c604f454bf08/raw?se=2026-11-24T05%3A22%3A41Z&sp=r&sv=2026-06-06&sr=b&scid=9a26fd3a-3a4b-50a8-b378-18d8b8e726fa&skoid=b1bca990-dcac-4c31-8ca1-ac563cf24c54&sktid=a48cca56-e6da-484e-a814-9c849652bcb3&skt=2026-11-23T23%3A18%3A02Z&ske=2026-11-24T23%3A18%3A02Z&sks=b&skv=2026-06-06&sig=E0xXEMOmFeNtjeH8fR9lDmXWij6BWhI5SI7OcQqjBG0%3D'
+        run: |
+          set -euo pipefail
+          echo "::add-mask::$ARTIFACT_URL"
+          curl --proto '=https' --fail --location --connect-timeout 12 --max-time 110 --silent --show-error "$ARTIFACT_URL" -o /tmp/alb-r36-approved.zip
+          echo '32fedcf479124ff1704869bd136af0a48179963ee8199dea8b4dc7c0b10846a9  /tmp/alb-r36-approved.zip' | sha256sum -c -
+          unzip -tq /tmp/alb-r36-approved.zip
+          mkdir -p /tmp/alb-r36
+          unzip -q /tmp/alb-r36-approved.zip -d /tmp/alb-r36
+          APK=/tmp/alb-r36/BYD_ALB_01.01_02_R36.apk
+          test -s "$APK"
+          test "$(stat -c %s "$APK")" -gt 10000000
+          echo '88965e44cf5ec2f314e3e0ca31754ac6568e6f552814e0881b131ea644b12512  /tmp/alb-r36/BYD_ALB_01.01_02_R36.apk' | sha256sum -c -
+          grep -Fxq 'SOURCE_SHA=e2e2a0eb44089d7d29baea9b2afb2a0874282ded' /tmp/alb-r36/BUILD_INFO.txt
+          grep -Fxq 'ACTIONS_RUN=45318934622' /tmp/alb-r36/BUILD_INFO.txt
+          grep -Fxq 'PACKAGE=com.seunghyun.bydautolock.test' /tmp/alb-r36/BUILD_INFO.txt
+          grep -Fxq 'VERSION_CODE=1036' /tmp/alb-r36/BUILD_INFO.txt
+          grep -Fxq 'VERSION_NAME=01.01_02_R36' /tmp/alb-r36/BUILD_INFO.txt
+          grep -Fxq 'CHANNEL=QA_ONLY' /tmp/alb-r36/BUILD_INFO.txt
+          AAPT="$(find "$ANDROID_HOME/build-tools" -type f -name aapt | sort -V | tail -n 1)"
+          APKSIGNER="$(find "$ANDROID_HOME/build-tools" -type f -name apksigner | sort -V | tail -n 1)"
+          test -x "$AAPT" && test -x "$APKSIGNER"
+          "$AAPT" dump badging "$APK" > /tmp/alb-r36/recheck-package.txt
+          grep -Fq "package: name='com.seunghyun.bydautolock.test' versionCode='1036' versionName='01.01_02_R36'" /tmp/alb-r36/recheck-package.txt
+          "$APKSIGNER" verify --verbose --print-certs "$APK" > /tmp/alb-r36/recheck-signer.txt
+          grep -Fiq '65637d09d45b6b05096c7831d92f65a039c6e3b06fdef6632601d7766ea05403' /tmp/alb-r36/recheck-signer.txt
+          echo 'R36 signed QA APK independently verified for public channel'
+      - name: Publish R36 APK BINARY FIRST, never alter Audio or HMC
+        shell: bash
+        run: |
+          set -euo pipefail
+          cp /tmp/alb-r36/BYD_ALB_01.01_02_R36.apk byd-alb/BYD_ALB_01.01_02_R36.apk
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add byd-alb/BYD_ALB_01.01_02_R36.apk
+          git diff --cached --check
+          git commit -m 'Publish verified BYD ALB R36 code1036 QA APK binary [skip ci]'
+          git push origin HEAD:main
+      - name: Independently verify DIRECT HTTPS public APK + full SHA BEFORE update listing
+        shell: bash
+        run: |
+          set -euo pipefail
+          URL='https://raw.githubusercontent.com/hanakim2001/BYD-SEAL-Radio-AutoScan-Updates/main/byd-alb/BYD_ALB_01.01_02_R36.apk'
+          ok=0
+          for i in 1 2 3 4 5 6 7 8 9 10 11 12; do
+            if curl --proto '=https' --max-redirs 0 --fail --silent --show-error --max-time 35 -o /tmp/alb-r36-public.apk "$URL"; then
+              if echo '88965e44cf5ec2f314e3e0ca31754ac6568e6f552814e0881b131ea644b12512  /tmp/alb-r36-public.apk' | sha256sum -c -; then
+                ok=1; break
+              fi
+            fi
+            sleep 2
+          done
+          test "$ok" = 1
+          echo 'PASS publicly retrievable R36 QA APK hash; manifest may now be updated'
+      - name: Publish QA R36 version manifest LAST (prior R35 preserved until here)
+        shell: bash
+        run: |
+          set -euo pipefail
+          git fetch origin main
+          git rebase origin/main
+          python3 - <<'PY'
+          import json
+          from pathlib import Path
+          file=Path('byd-alb/manifest.json')
+          d=json.loads(file.read_text())
+          assert d['status']=='released' and d['channel']=='QA'
+          assert d['packageName']=='com.seunghyun.bydautolock.test'
+          assert d['versionCode']==1035 and d['sha256']=='3551cbacd39668e279318a7c1ddf00dc6539c3dcae42e53ab41afcb12844c4af'
+          d.update({
+              'status':'released',
+              'channel':'QA',
+              'updatedAt':'2026-11-24',
+              'versionCode':1036,
+              'versionName':'01.01_02_R36',
+              'apkUrl':'https://raw.githubusercontent.com/hanakim2001/BYD-SEAL-Radio-AutoScan-Updates/main/byd-alb/BYD_ALB_01.01_02_R36.apk',
+              'sha256':'88965e44cf5ec2f314e3e0ca31754ac6568e6f552814e0881b131ea644b12512',
+              'changes':'R36 사용자 QA: 최초 접근 BLE 세션 안정화, 제조사 자체 재잠금 3분 관찰 종료 개선, RSSI 열린 자물쇠 수정, 기존 인증 기반 읽기 전용 서버 상태 2초·15초 비교 및 차량·응답 일치 검사. 실제 서버 최신 SOC/ODO와 재잠금 후 재해제는 실차 검증 필요. 트렁크 닫힘 미해결·비송신. 기존 QR/토큰/BLE 키 및 설정 유지.'
+          })
+          file.write_text(json.dumps(d,ensure_ascii=False,indent=2)+'\n')
+          PY
+          git add byd-alb/manifest.json
+          git diff --cached --check
+          git commit -m 'Enable existing BYD ALB in-app QA updater for signed R36 code1036 [skip ci]'
+          git push origin HEAD:main
+      - name: Verify manifest EXACTLY matches publicly verified R36 APK
+        shell: bash
+        run: |
+          set -euo pipefail
+          URL='https://raw.githubusercontent.com/hanakim2001/BYD-SEAL-Radio-AutoScan-Updates/main/byd-alb/manifest.json'
+          ok=0
+          for i in 1 2 3 4 5 6 7 8 9 10; do
+            if curl --proto '=https' --max-redirs 0 --fail --silent --show-error --max-time 15 "$URL" -o /tmp/alb-r36-public-manifest.json; then
+              if python3 - <<'PY'
+          import json
+          m=json.load(open('/tmp/alb-r36-public-manifest.json'))
+          assert m['status']=='released' and m['channel']=='QA'
+          assert m['packageName']=='com.seunghyun.bydautolock.test'
+          assert m['versionCode']==1036 and m['versionName']=='01.01_02_R36'
+          assert m['sha256']=='88965e44cf5ec2f314e3e0ca31754ac6568e6f552814e0881b131ea644b12512'
+          assert m['apkUrl']=='https://raw.githubusercontent.com/hanakim2001/BYD-SEAL-Radio-AutoScan-Updates/main/byd-alb/BYD_ALB_01.01_02_R36.apk'
+          PY
+              then ok=1; break; fi
+            fi
+            sleep 2
+          done
+          test "$ok" = 1
+          echo 'PASS BYD ALB R36/code1036 existing in-app updater, public manifest verified'
