@@ -1,7 +1,7 @@
 {
-  "versionCode": 224,
+  "versionCode": 225,
   "versionName": "02.02",
-  "apkUrl": "https://raw.githubusercontent.com/hanakim2001/BYD-SEAL-Radio-AutoScan-Updates/main/BYD_SEAL_AUDIO_V02.02_CODE224.apk",
-  "sha256": "36c1468a19f7dda95cb9ab94125eaa537a70dd5bead2c4246ec38b325a876cb2",
-  "releaseNotes": "R9 code224 실차 시험판: R7 SYSTEM 종료 대응 및 길게 눌러 기존 UPDATE 직접 진입, 순정 FM/BT 메타데이터 구분과 실제 라디오 읽기 분리, R8 누적 개선. 주차 상태에서 시험. 기존 앱 삭제 금지. OEM 자동검색·6리스너·HUD/TURN/계기판 및 실제 음향 미확인."
+  "apkUrl": "https://raw.githubusercontent.com/hanakim2001/BYD-SEAL-Radio-AutoScan-Updates/main/BYD_SEAL_AUDIO_V02.02_CODE225.apk",
+  "sha256": "bb93361dd7337488c8cf39c2a0ee9fda6b87e8cfe43e5e6200158b595c997b7c",
+  "releaseNotes": "R10 code225 실차 시험판: 앱 밝기 40~100% 및 자동 복원, 터치 조절선 굵기, WEB 빈 화면 감지·복구, 순정 라디오 수신 상태 정합성 및 R9 누적 개선. 주차 상태에서 시험. 기존 앱 삭제 금지. 차량 정보·OEM 자동검색·6리스너·HUD/TURN/계기판 및 실제 음향 미확인."
 }
