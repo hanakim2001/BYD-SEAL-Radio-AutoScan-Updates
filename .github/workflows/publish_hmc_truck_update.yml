@@ -72,7 +72,7 @@ jobs:
           VERSION_NAME: ${{ steps.trigger.outputs.version_name }}
         run: |
           set -euo pipefail
-          curl --fail --location --retry 2 "$ARTIFACT_URL" -o /tmp/hmc-artifact.zip
+          curl --fail --location --proto "=https" --proto-redir "=https" --retry 2 "$ARTIFACT_URL" -o /tmp/hmc-artifact.zip
           python3 - <<'PY'
           import hashlib,json,os,re,subprocess,zipfile
           from pathlib import Path
@@ -83,16 +83,17 @@ jobs:
               r3_records=[n for n in archive.namelist() if n.endswith("HMC_3.4.1_323_R3_PROVENANCE.json")]
               r4_records=[n for n in archive.namelist() if n.endswith("HMC_3.4.1_324_R4_PROVENANCE.json")]
               r5_records=[n for n in archive.namelist() if n.endswith("HMC_3.4.1_325_R5_PROVENANCE.json")]
-              records=legacy_records+r2_records+r3_records+r4_records+r5_records
+              r6_records=[n for n in archive.namelist() if n.endswith("HMC_3.4.1_326_R6_PROVENANCE.json")]
+              records=legacy_records+r2_records+r3_records+r4_records+r5_records+r6_records
               candidates=[n for n in archive.namelist() if n.endswith("BUILD_INFO.txt")]
               assert len(apks)==1, "Ambiguous release APK"
               if len(records)==1 and not candidates:
                   provenance=json.loads(archive.read(records[0]))
-                  if r2_records or r3_records or r4_records or r5_records:
+                  if r2_records or r3_records or r4_records or r5_records or r6_records:
                       # R2, R3 and the owner-approved R4 must each be signed,
                       # source-bound FIELD DEMO trials, never a FINAL release.
-                      assert len(r2_records)+len(r3_records)+len(r4_records)+len(r5_records)==1 and not legacy_records, "Ambiguous trial evidence"
-                      trial_code=322 if r2_records else (323 if r3_records else (324 if r4_records else 325))
+                      assert len(r2_records)+len(r3_records)+len(r4_records)+len(r5_records)+len(r6_records)==1 and not legacy_records, "Ambiguous trial evidence"
+                      trial_code=322 if r2_records else (323 if r3_records else (324 if r4_records else (325 if r5_records else 326)))
                       assert int(os.environ["VERSION_CODE"])==trial_code, "Trial version mismatch"
                       assert provenance.get("trialOnly") is True, "Must remain a trial"
                       assert provenance.get("finalRelease") is False, "Trial cannot be FINAL"
@@ -100,6 +101,10 @@ jobs:
                       assert provenance.get("deviceValidation")=="PENDING", "Device evidence mismatch"
                       assert provenance.get("sharedStateBackend")=="DISABLED_FIELD_DEMO_LOCAL_ONLY", "Shared-state boundary changed"
                       assert provenance.get("target")=="lib/main_stage5_field_demo.dart", "Must be field demo"
+                      if r6_records:
+                          assert provenance.get("sourceCommit")=="68c00f6a95c170e6bbb8eb51d0d059b0d3849c45", "Unapproved R6 source"
+                          assert provenance.get("apkSha256")=="6718928d2bbb993837dc4176e25e95e639a8aa7ab4aea7110470df0cf13c00e8", "Unapproved R6 APK digest"
+                          assert provenance.get("runUrl")=="https://github.com/hanakim2001/HMC-Truck-Sequence-Feeding/actions/runs/45535031093", "R6 build run mismatch"
               else:
                   assert len(records)==0 and len(candidates)==1, "Ambiguous APK provenance"
                   lines=archive.read(candidates[0]).decode("utf-8").splitlines()
@@ -151,7 +156,7 @@ jobs:
           print("Verified APK package, version, signature, source and SHA-256")
           PY
 
-      - name: Publish verified update without overwriting concurrent work
+      - name: Stage immutable verified APK without changing update manifest
         shell: bash
         run: |
           set -euo pipefail
@@ -161,20 +166,70 @@ jobs:
           import hashlib,json
           from pathlib import Path
           trigger=json.loads(Path("/tmp/hmc-publish-trigger.json").read_text())
-          current_trigger=json.loads(Path("hmc-truck/PUBLISH_TRIGGER.json").read_text())
-          assert current_trigger==trigger, "Publish trigger changed concurrently"
-          path=Path("hmc-truck/manifest.json")
-          manifest=json.loads(path.read_text())
+          assert json.loads(Path("hmc-truck/PUBLISH_TRIGGER.json").read_text())==trigger, "Publish trigger changed concurrently"
+          manifest=json.loads(Path("hmc-truck/manifest.json").read_text())
           assert manifest["versionCode"]==trigger["previousVersionCode"], "Published version changed concurrently"
           assert manifest["sha256"].lower()==trigger["previousSha256"].lower(), "Published APK changed concurrently"
           apk=Path("/tmp/hmc-verified.apk").read_bytes()
           assert hashlib.sha256(apk).hexdigest()==trigger["sha256"].lower()
-          Path("hmc-truck/HMC_Truck_Sequence_Feeding_latest.apk").write_bytes(apk)
           filename="HMC_Truck_Sequence_Feeding_code"+str(trigger["versionCode"])+"_"+trigger["sha256"][:12].lower()+".apk"
           versioned=Path("hmc-truck")/filename
           if versioned.exists():
               assert hashlib.sha256(versioned.read_bytes()).hexdigest()==trigger["sha256"].lower(), "Versioned APK path changed"
           versioned.write_bytes(apk)
+          Path("/tmp/hmc-versioned-name.txt").write_text(filename)
+          PY
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          filename="$(cat /tmp/hmc-versioned-name.txt)"
+          git add "hmc-truck/$filename"
+          if ! git diff --cached --quiet; then
+            git commit -m "stage(hmc): immutable verified trial APK before manifest"
+            git push origin HEAD:main
+          fi
+
+      - name: Verify actual public HTTPS versioned APK bytes before manifest switch
+        shell: bash
+        env:
+          EXPECTED_SHA: ${{ steps.trigger.outputs.sha }}
+        run: |
+          set -euo pipefail
+          filename="$(cat /tmp/hmc-versioned-name.txt)"
+          url="https://raw.githubusercontent.com/hanakim2001/BYD-SEAL-Radio-AutoScan-Updates/main/hmc-truck/$filename"
+          verified=false
+          for attempt in 1 2 3 4 5 6; do
+            if curl --silent --show-error --fail --location --proto "=https" --proto-redir "=https" --connect-timeout 15 --max-time 120 "$url" -o /tmp/hmc-public.apk; then
+              if printf '%s  %s\n' "$EXPECTED_SHA" /tmp/hmc-public.apk | sha256sum --check --status && cmp -s /tmp/hmc-public.apk /tmp/hmc-verified.apk; then
+                verified=true
+                break
+              fi
+            fi
+            sleep 10
+          done
+          test "$verified" = true
+          echo "Public HTTPS APK download and exact SHA-256/byte equality verified"
+
+      - name: Switch verified update manifest without overwriting concurrent work
+        shell: bash
+        run: |
+          set -euo pipefail
+          git fetch origin main
+          git reset --hard origin/main
+          python3 - <<'PY'
+          import hashlib,json
+          from pathlib import Path
+          trigger=json.loads(Path("/tmp/hmc-publish-trigger.json").read_text())
+          assert json.loads(Path("hmc-truck/PUBLISH_TRIGGER.json").read_text())==trigger, "Publish trigger changed concurrently"
+          path=Path("hmc-truck/manifest.json")
+          manifest=json.loads(path.read_text())
+          assert manifest["versionCode"]==trigger["previousVersionCode"], "Published version changed concurrently"
+          assert manifest["sha256"].lower()==trigger["previousSha256"].lower(), "Published APK changed concurrently"
+          filename=Path("/tmp/hmc-versioned-name.txt").read_text()
+          apk=Path("/tmp/hmc-verified.apk").read_bytes()
+          assert hashlib.sha256(apk).hexdigest()==trigger["sha256"].lower()
+          assert Path("/tmp/hmc-public.apk").read_bytes()==apk, "Public download evidence mismatch"
+          assert (Path("hmc-truck")/filename).read_bytes()==apk, "Staged APK changed concurrently"
+          Path("hmc-truck/HMC_Truck_Sequence_Feeding_latest.apk").write_bytes(apk)
           manifest={"versionName":trigger["versionName"],"versionCode":trigger["versionCode"],
                     "apkUrl":"https://raw.githubusercontent.com/hanakim2001/BYD-SEAL-Radio-AutoScan-Updates/main/hmc-truck/"+filename,
                     "sha256":trigger["sha256"].lower(),
@@ -186,12 +241,12 @@ jobs:
           PY
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          git add hmc-truck/HMC_Truck_Sequence_Feeding_latest.apk hmc-truck/HMC_Truck_Sequence_Feeding_code*.apk hmc-truck/manifest.json hmc-truck/PUBLISH_TRIGGER.json
-          git commit -m "publish(hmc): verified code${{ steps.trigger.outputs.version_code }} smartphone in-app update"
+          git add hmc-truck/HMC_Truck_Sequence_Feeding_latest.apk hmc-truck/manifest.json hmc-truck/PUBLISH_TRIGGER.json
+          git commit -m "publish(hmc): public HTTPS verified code${{ steps.trigger.outputs.version_code }} smartphone in-app update"
           git push origin HEAD:main
 
       - name: Remove temporary release transfers
         if: ${{ always() }}
         shell: bash
-        run: rm -f /tmp/hmc-artifact.zip /tmp/hmc-verified.apk /tmp/hmc-publish-trigger.json
+        run: rm -f /tmp/hmc-artifact.zip /tmp/hmc-verified.apk /tmp/hmc-publish-trigger.json /tmp/hmc-public.apk /tmp/hmc-versioned-name.txt
 
