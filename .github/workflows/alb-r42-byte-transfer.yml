@@ -1,0 +1,68 @@
+name: Publish verified ALB R42 QA
+on:
+  push:
+    branches: [alb-qa-r42-transfer]
+    paths: ['.github/workflows/alb-r42-byte-transfer.yml']
+permissions:
+  contents: write
+concurrency:
+  group: alb-qa-publication
+  cancel-in-progress: false
+jobs:
+  publish:
+    runs-on: ubuntu-latest
+    timeout-minutes: 12
+    env:
+      APK: BYD_ALB_01.01_02_R42.apk
+      APK_SHA: 126a21055abf1a23725dcdd368248d41112b585afbbfb3c12a86c9ba4a65079a
+      CERT_SHA: 65637d09d45b6b05096c7831d92f65a039c6e3b06fdef6632601d7766ea05403
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          path: transfer
+          persist-credentials: false
+      - name: Verify reconstructed signed APK
+        run: |
+          set -euo pipefail
+          test "$GITHUB_REPOSITORY" = hanakim2001/BYD-SEAL-Radio-AutoScan-Updates
+          test "$GITHUB_REF_NAME" = alb-qa-r42-transfer
+          test "$(find transfer/byd-alb/parts -maxdepth 1 -type f | wc -l)" -eq 28
+          cat transfer/byd-alb/parts/part-{00..27} > "$RUNNER_TEMP/$APK"
+          test "$(wc -c < "$RUNNER_TEMP/$APK")" -eq 18943440
+          echo "$APK_SHA  $RUNNER_TEMP/$APK" | sha256sum -c -
+          sdk="$(find "$ANDROID_HOME/build-tools" -type f -name apksigner | sort -V | tail -1)"
+          test -x "$sdk" && test -x "${sdk%/*}/aapt"
+          "$sdk" verify --print-certs "$RUNNER_TEMP/$APK" > "$RUNNER_TEMP/signature"
+          test "$(grep -c 'certificate SHA-256 digest:' "$RUNNER_TEMP/signature")" -eq 1
+          grep -Fxq "Signer #1 certificate SHA-256 digest: $CERT_SHA" "$RUNNER_TEMP/signature"
+          "${sdk%/*}/aapt" dump badging "$RUNNER_TEMP/$APK" > "$RUNNER_TEMP/badging"
+          grep -Fq "package: name='com.seunghyun.bydautolock.test' versionCode='1042' versionName='01.01_02_R42'" "$RUNNER_TEMP/badging"
+      - uses: actions/checkout@v4
+        with:
+          ref: main
+          path: updater
+      - name: Publish APK, verify anonymous bytes, then activate QA manifest
+        working-directory: updater
+        run: |
+          set -euo pipefail
+          jq -e '.channel == "QA" and .status == "released" and .packageName == "com.seunghyun.bydautolock.test" and .versionCode == 1039 and .sha256 == "94950a4fc7ea1bd96ec46561b762d7e6694de69da1e4b33d95479bbe6ce951cc"' byd-alb/manifest.json
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          if test -f "byd-alb/$APK"; then
+            echo "$APK_SHA  byd-alb/$APK" | sha256sum -c -
+          else
+            cp "$RUNNER_TEMP/$APK" "byd-alb/$APK"
+            git add -- "byd-alb/$APK"
+            git commit -m 'Stage verified ALB R42 QA APK [skip ci]'
+            git push origin HEAD:main
+          fi
+          RAW=https://raw.githubusercontent.com/hanakim2001/BYD-SEAL-Radio-AutoScan-Updates/main/byd-alb
+          curl --proto '=https' -fsS --retry 4 --retry-all-errors --max-time 45 "$RAW/$APK?commit=$(git rev-parse HEAD)" -o "$RUNNER_TEMP/public.apk"
+          echo "$APK_SHA  $RUNNER_TEMP/public.apk" | sha256sum -c -
+          jq --arg url "$RAW/$APK" --arg hash "$APK_SHA" '.versionCode = 1042 | .versionName = "01.01_02_R42" | .updatedAt = "2026-11-27" | .apkUrl = $url | .sha256 = $hash | .changes = "R42 QA 실차 시험판. BLE 복구 개선 및 읽기 전용 상태 조회 비교. 실차 검증 필요."' byd-alb/manifest.json > "$RUNNER_TEMP/new-manifest"
+          cp "$RUNNER_TEMP/new-manifest" byd-alb/manifest.json
+          git add -- byd-alb/manifest.json
+          git commit -m 'Activate verified ALB R42 in-app QA update [skip ci]'
+          git push origin HEAD:main
+          curl --proto '=https' -fsS --retry 4 --retry-all-errors --max-time 30 "$RAW/manifest.json?commit=$(git rev-parse HEAD)" -o "$RUNNER_TEMP/public-manifest"
+          cmp byd-alb/manifest.json "$RUNNER_TEMP/public-manifest"
