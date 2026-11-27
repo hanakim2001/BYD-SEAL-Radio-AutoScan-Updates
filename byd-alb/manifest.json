@@ -3,9 +3,9 @@
   "channel": "QA",
   "status": "released",
   "updatedAt": "2026-11-27",
-  "versionCode": 1042,
-  "versionName": "01.01_02_R42",
-  "apkUrl": "https://raw.githubusercontent.com/hanakim2001/BYD-SEAL-Radio-AutoScan-Updates/main/byd-alb/BYD_ALB_01.01_02_R42.apk",
-  "sha256": "126a21055abf1a23725dcdd368248d41112b585afbbfb3c12a86c9ba4a65079a",
-  "changes": "R42 QA: BLE 연결 복구와 접근 신호 처리 안정화, 배터리·차량 상태 읽기 전용 시험 추가. 기존 RSSI·시간·QR·BLE 키·사용자 설정 유지. 실차 동작과 실제 SOC·ODO는 확인 필요."
+  "versionCode": 1043,
+  "versionName": "01.01_02_R43",
+  "apkUrl": "https://raw.githubusercontent.com/hanakim2001/BYD-SEAL-Radio-AutoScan-Updates/main/byd-alb/BYD_ALB_01.01_02_R43.apk",
+  "sha256": "442f499250bdc97dd6d4880cc9d581a76ddebddfab2fe76704adbc251ea2c34c",
+  "changes": "R43 QA: BLE 인증·명령·RSSI 복구 개선, 전주 서비스센터 자동정지 시험(직접 활성화), 서버 조회 후보 판별 개선. 기존 설정·키·서명 유지. 실차 재잠김·트렁크 닫힘·SOC/ODO는 미확인."
 }
