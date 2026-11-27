@@ -1,0 +1,65 @@
+name: Verify public R44 APK and activate existing ALB manifest last
+on:
+  push:
+    branches: [main]
+    paths:
+      - '.github/workflows/verify_byd_alb_r44_code1044_manifest_last.yml'
+permissions:
+  contents: write
+concurrency:
+  group: byd-alb-qa-binary
+  cancel-in-progress: false
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+    timeout-minutes: 8
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 2
+      - name: Independently download both public APK URLs and verify all bytes
+        shell: bash
+        run: |
+          set -euo pipefail
+          test "$GITHUB_RUN_ATTEMPT" = 1
+          test "$(git diff --name-only HEAD^ HEAD)" = '.github/workflows/verify_byd_alb_r44_code1044_manifest_last.yml'
+          test "$(git hash-object byd-alb/manifest.json)" = 61088004e523a86406b3aec8e44347b0e5da6192
+          work="$(mktemp -d)"
+          trap 'rm -rf "$work"' EXIT
+          for revision in 'c85a43036252e47abbe688b4a4c71017e8a831e3' main; do
+            curl --fail --silent --show-error --location --proto '=https' --max-time 120 "https://raw.githubusercontent.com/hanakim2001/BYD-SEAL-Radio-AutoScan-Updates/$revision/byd-alb/BYD_ALB_01.01_02_R44.apk" -o "$work/$revision.apk"
+            test "$(stat -c %s "$work/$revision.apk")" = 18974448
+            echo "d890a900a06cf7f4c1e0fa72820f2618742bdc88de893e8bb8a60cd10c6ac3d7  $work/$revision.apk" | sha256sum -c -
+            test "$(git hash-object "$work/$revision.apk")" = 30eaf2bec01d2bb33264bd0835c9aba3297d48d9
+          done
+          cmp "$work/c85a43036252e47abbe688b4a4c71017e8a831e3.apk" "$work/main.apk"
+          cmp "$work/main.apk" byd-alb/BYD_ALB_01.01_02_R44.apk
+          echo 'PASS anonymous pinned and main public APK full-byte verification'
+      - name: Activate only the existing ALB manifest after verified public bytes
+        shell: bash
+        run: |
+          set -euo pipefail
+          git fetch origin main
+          test "$(git rev-parse origin/main)" = "$GITHUB_SHA"
+          test "$(git hash-object byd-alb/manifest.json)" = 61088004e523a86406b3aec8e44347b0e5da6192
+          cat > byd-alb/manifest.json <<'JSON'
+          {
+            "packageName": "com.seunghyun.bydautolock.test",
+            "channel": "QA",
+            "status": "released",
+            "updatedAt": "2026-11-27",
+            "versionCode": 1044,
+            "versionName": "01.01_02_R44",
+            "apkUrl": "https://raw.githubusercontent.com/hanakim2001/BYD-SEAL-Radio-AutoScan-Updates/main/byd-alb/BYD_ALB_01.01_02_R44.apk",
+            "sha256": "d890a900a06cf7f4c1e0fa72820f2618742bdc88de893e8bb8a60cd10c6ac3d7",
+            "changes": "R44 QA: 원본 BLE 서버 조회 시험(직접 실행, 처리 중에만 최대 4회), 서비스센터 4곳 시험 확대. 기존 BLE 설정·키·서명 유지. 실차 트렁크 닫힘·서버 실제 차량값·GPS 자동정지는 미확인."
+          }
+          JSON
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add -- byd-alb/manifest.json
+          test "$(git diff --cached --name-only)" = byd-alb/manifest.json
+          git diff --cached --check
+          git commit -m 'Activate verified BYD ALB R44 in-app update [skip ci]'
+          git push origin HEAD:main
+          echo 'PASS existing ALB manifest activated last'
