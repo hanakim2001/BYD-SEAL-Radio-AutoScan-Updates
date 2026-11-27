@@ -85,16 +85,17 @@ jobs:
               r5_records=[n for n in archive.namelist() if n.endswith("HMC_3.4.1_325_R5_PROVENANCE.json")]
               r6_records=[n for n in archive.namelist() if n.endswith("HMC_3.4.1_326_R6_PROVENANCE.json")]
               r7_records=[n for n in archive.namelist() if n.endswith("HMC_3.4.1_327_R7_PROVENANCE.json")]
-              records=legacy_records+r2_records+r3_records+r4_records+r5_records+r6_records+r7_records
+              r8_records=[n for n in archive.namelist() if n.endswith("HMC_3.4.1_328_R8_PROVENANCE.json")]
+              records=legacy_records+r2_records+r3_records+r4_records+r5_records+r6_records+r7_records+r8_records
               candidates=[n for n in archive.namelist() if n.endswith("BUILD_INFO.txt")]
               assert len(apks)==1, "Ambiguous release APK"
               if len(records)==1 and not candidates:
                   provenance=json.loads(archive.read(records[0]))
-                  if r2_records or r3_records or r4_records or r5_records or r6_records or r7_records:
+                  if r2_records or r3_records or r4_records or r5_records or r6_records or r7_records or r8_records:
                       # R2, R3 and the owner-approved R4 must each be signed,
                       # source-bound FIELD DEMO trials, never a FINAL release.
-                      assert len(r2_records)+len(r3_records)+len(r4_records)+len(r5_records)+len(r6_records)+len(r7_records)==1 and not legacy_records, "Ambiguous trial evidence"
-                      trial_code=327 if r7_records else (322 if r2_records else (323 if r3_records else (324 if r4_records else (325 if r5_records else 326))))
+                      assert len(r2_records)+len(r3_records)+len(r4_records)+len(r5_records)+len(r6_records)+len(r7_records)+len(r8_records)==1 and not legacy_records, "Ambiguous trial evidence"
+                      trial_code=328 if r8_records else (327 if r7_records else (322 if r2_records else (323 if r3_records else (324 if r4_records else (325 if r5_records else 326)))))
                       assert int(os.environ["VERSION_CODE"])==trial_code, "Trial version mismatch"
                       assert provenance.get("trialOnly") is True, "Must remain a trial"
                       assert provenance.get("finalRelease") is False, "Trial cannot be FINAL"
@@ -110,6 +111,10 @@ jobs:
                           assert provenance.get("sourceCommit")=="7147e450b3750c665cf036526551b3eff95cf998", "Unapproved R7 source"
                           assert provenance.get("apkSha256")=="86353dc306d20b1dfa0174e59992d072ee37e58c544d654968d01e86a36b4fb0", "Unapproved R7 APK digest"
                           assert provenance.get("runUrl")=="https://github.com/hanakim2001/HMC-Truck-Sequence-Feeding/actions/runs/45760516848", "R7 build run mismatch"
+                      if r8_records:
+                          assert provenance.get("sourceCommit")=="ba886a34adcfd24099b9f880616ad51d8db06236", "Unapproved R8 source"
+                          assert provenance.get("apkSha256")=="2b98f04a0c45c39da279e43cfd5277d655f223f4b5986cff8249de41c5f2d034", "Unapproved R8 APK digest"
+                          assert provenance.get("runUrl")=="https://github.com/hanakim2001/HMC-Truck-Sequence-Feeding/actions/runs/45904285161", "R8 build run mismatch"
               else:
                   assert len(records)==0 and len(candidates)==1, "Ambiguous APK provenance"
                   lines=archive.read(candidates[0]).decode("utf-8").splitlines()
