@@ -2,10 +2,10 @@
   "packageName": "com.seunghyun.bydautolock.test",
   "channel": "QA",
   "status": "released",
-  "updatedAt": "2026-11-27",
-  "versionCode": 1044,
-  "versionName": "01.01_02_R44",
-  "apkUrl": "https://raw.githubusercontent.com/hanakim2001/BYD-SEAL-Radio-AutoScan-Updates/main/byd-alb/BYD_ALB_01.01_02_R44.apk",
-  "sha256": "d890a900a06cf7f4c1e0fa72820f2618742bdc88de893e8bb8a60cd10c6ac3d7",
-  "changes": "R44 QA: 원본 BLE 서버 조회 시험(직접 실행, 처리 중에만 최대 4회), 서비스센터 4곳 시험 확대. 기존 BLE 설정·키·서명 유지. 실차 트렁크 닫힘·서버 실제 차량값·GPS 자동정지는 미확인."
+  "updatedAt": "2026-11-28",
+  "versionCode": 1045,
+  "versionName": "01.01_02_R45",
+  "apkUrl": "https://raw.githubusercontent.com/hanakim2001/BYD-SEAL-Radio-AutoScan-Updates/main/byd-alb/BYD_ALB_01.01_02_R45.apk",
+  "sha256": "b10cc5503f8b93550ae3e82d137cb82badef77d8c1c8365bd2c86107293d1ee9",
+  "changes": "R45 QA: 삼성 루틴 잠금·해제 및 트렁크 열기 화면 미표시 수정. 기존 BLE·설정·키·서명 유지. 실차 루틴, 서버 차량정보 및 트렁크 닫힘 미확인."
 }
