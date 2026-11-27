@@ -1,0 +1,11 @@
+{
+  "artifactUrl": "https://sdmntprjapaneast.oaiusercontent.com/files/00000000-31b0-8209-bef6-58e7b02c32b8/raw?se=2026-11-27T01%3A12%3A16Z&sp=r&sv=2026-06-06&sr=b&scid=93d6b547-ecfd-51fc-bcd6-d047452fd885&skoid=b1bca990-dcac-4c31-8ca1-ac563cf24c54&sktid=a48cca56-e6da-484e-a814-9c849652bcb3&skt=2026-11-27T00%3A05%3A11Z&ske=2026-11-28T00%3A05%3A11Z&sks=b&skv=2026-06-06&sig=mls%2BIQADTDqkLQjlwveGl/0H8ITL6d0VqyvMFs9dEmQ%3D",
+  "sha256": "2b98f04a0c45c39da279e43cfd5277d655f223f4b5986cff8249de41c5f2d034",
+  "versionName": "3.4.1",
+  "versionCode": 328,
+  "sourceCommit": "ba886a34adcfd24099b9f880616ad51d8db06236",
+  "expectedSignerCertificateSha256": "8a3441a39d2ca66e0c65bd31bcef6f61f2d84730277fa6abd43990f26babafe8",
+  "previousVersionCode": 327,
+  "previousSha256": "86353dc306d20b1dfa0174e59992d072ee37e58c544d654968d01e86a36b4fb0",
+  "notes": "HMC Truck code328 R8 smartphone FIELD TRIAL: verified response order and physical Body uniqueness; receipt date and vehicle conflict handling; explicit model demand filter; OTP safe evidence. OTP root cause and actual device acceptance pending. JIS read-only; remote shared state disabled; NOT FINAL."
+}
