@@ -1,0 +1,77 @@
+name: Stage signed BYD ALB R42 for existing in-app update
+on:
+  push:
+    branches: [main]
+    paths:
+      - '.github/workflows/publish_byd_alb_r42_code1042_once.yml'
+permissions:
+  contents: write
+concurrency:
+  group: byd-alb-qa-binary
+  cancel-in-progress: false
+jobs:
+  publish:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    env:
+      APK_PATH: byd-alb/BYD_ALB_01.01_02_R42.apk
+      APK_SHA: 126a21055abf1a23725dcdd368248d41112b585afbbfb3c12a86c9ba4a65079a
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 2
+      - name: Check the R39 baseline and reconstruct the approved R42 APK
+        env:
+          GH_TOKEN: ${{ github.token }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          test "$GITHUB_RUN_ATTEMPT" = 1
+          test "$(git diff --name-only HEAD^ HEAD)" = '.github/workflows/publish_byd_alb_r42_code1042_once.yml'
+          test "$(git hash-object byd-alb/manifest.json)" = d9b8df7560454d8c153b3a0e2b47e25cb8f2c631
+          test ! -e "$APK_PATH"
+          parts=(
+            65bf690bf0003f329abf4a263294a1172ba7265b
+            e2b424d64cdbae369ec39756379a7b4279881cd3
+            45ab0951932a9ec39795152babd5386e6b3db85f
+            db42ce9dd363eb205895513bc17bbc2b1c8ce836
+            cd7ed7f10e0f429b3e3ceab0c30cba39775bc817
+            61944311fa9ca7582ec1054b9400ce0b4e4abd37
+            15e8039688744c49bda90709322e5617f5696b77
+            eb8df79d59596debb6be4afe61e0491e6419ace2
+            32867edd3042a9679e100873493cae776df3f33e
+            d47212e1f4f5f7630aee7cba9d847f75e4113da5
+            d03d760f6f017a610a9da56775662a44ada4dce6
+            7114e65ec96a673f71b56ae4928cba2e19578939
+          )
+          work="$(mktemp -d)"
+          trap 'rm -rf "$work"' EXIT
+          for sha in "${parts[@]}"; do
+            gh api -H 'Accept: application/vnd.github.raw+json' "repos/$GITHUB_REPOSITORY/git/blobs/$sha" > "$work/part"
+            test "$(git hash-object "$work/part")" = "$sha"
+            cat "$work/part" >> "$work/apk.gz"
+          done
+          echo "94bf004ba2314a9b5e242e660ad6908b3658bf52ed8c5998d3266bacd6eb7676  $work/apk.gz" | sha256sum -c -
+          gzip -dc "$work/apk.gz" > "$work/verified.apk"
+          test "$(stat -c %s "$work/verified.apk")" = 18943440
+          echo "$APK_SHA  $work/verified.apk" | sha256sum -c -
+          aapt="$(find "$ANDROID_HOME/build-tools" -type f -name aapt | sort -V | tail -n 1)"
+          apksigner="$(find "$ANDROID_HOME/build-tools" -type f -name apksigner | sort -V | tail -n 1)"
+          "$aapt" dump badging "$work/verified.apk" > "$work/badging"
+          grep -Fq "package: name='com.seunghyun.bydautolock.test' versionCode='1042' versionName='01.01_02_R42'" "$work/badging"
+          "$apksigner" verify --verbose --print-certs "$work/verified.apk" > "$work/signer"
+          grep -Fxq 'Number of signers: 1' "$work/signer"
+          grep -Fixq 'Signer #1 certificate SHA-256 digest: 65637d09d45b6b05096c7831d92f65a039c6e3b06fdef6632601d7766ea05403' "$work/signer"
+          cp "$work/verified.apk" "$APK_PATH"
+      - name: Publish only the verified R42 binary
+        shell: bash
+        run: |
+          set -euo pipefail
+          echo "$APK_SHA  $APK_PATH" | sha256sum -c -
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add -- "$APK_PATH"
+          test "$(git diff --cached --name-only)" = "$APK_PATH"
+          git diff --cached --check
+          git commit -m 'Publish verified BYD ALB R42 QA APK binary [skip ci]'
+          git push origin HEAD:main
