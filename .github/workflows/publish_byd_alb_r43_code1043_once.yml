@@ -1,0 +1,78 @@
+name: Stage signed BYD ALB R43 for existing in-app update
+on:
+  push:
+    branches: [main]
+    paths:
+      - '.github/workflows/publish_byd_alb_r43_code1043_once.yml'
+permissions:
+  contents: write
+concurrency:
+  group: byd-alb-qa-binary
+  cancel-in-progress: false
+jobs:
+  publish:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    env:
+      APK_PATH: byd-alb/BYD_ALB_01.01_02_R43.apk
+      APK_SHA: 442f499250bdc97dd6d4880cc9d581a76ddebddfab2fe76704adbc251ea2c34c
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 2
+      - name: Check the R42 baseline and reconstruct the approved R43 APK
+        env:
+          GH_TOKEN: ${{ github.token }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          test "$GITHUB_RUN_ATTEMPT" = 1
+          test "$(git diff --name-only HEAD^ HEAD)" = '.github/workflows/publish_byd_alb_r43_code1043_once.yml'
+          test "$(git hash-object byd-alb/manifest.json)" = 550f838d177c3fe6a0bd0bbfc8d7d5c73f18146c
+          test ! -e "$APK_PATH"
+          parts=(
+            76323c7affcfcf94b71d85bbb51f84dd64bb32f0
+            0e5842c75e268e329e0b322c9d6f2816c634a33a
+            0c5639059b70dd8da89fe520a1bac462531a9f90
+            8c99abd204adeffd4f6e67509ffd227db9307356
+            77c96d353e2e44b0aaca4b77fd59b26404130839
+            6d02da80dc81542b5e7d69da3b8ad759e3dd675d
+            8097b86b8ddf28b32b3ab6499626d7b588b8539b
+            e6f1244e261c29b30bacafeaccf342c6e3f94b36
+            658a260da63f0bcdc50c3d7e2b878889bc41d033
+            81177ae4329551db75bbb41b6cfa0398e96c7b0f
+            62b2a3d272cce142c15456faba7892758b44078d
+            5d74d11cd91ade49cfc47998e046b09363289d62
+          )
+          work="$(mktemp -d)"
+          trap 'rm -rf "$work"' EXIT
+          for sha in "${parts[@]}"; do
+            gh api -H 'Accept: application/vnd.github.raw+json' "repos/$GITHUB_REPOSITORY/git/blobs/$sha" > "$work/part"
+            test "$(git hash-object "$work/part")" = "$sha"
+            cat "$work/part" >> "$work/apk.gz"
+          done
+          echo "4d249b1e8ce82175e604b64b3e85da7a794d75cdea502ad44813594010a0645f  $work/apk.gz" | sha256sum -c -
+          gzip -dc "$work/apk.gz" > "$work/verified.apk"
+          test "$(stat -c %s "$work/verified.apk")" = 18968940
+          echo "$APK_SHA  $work/verified.apk" | sha256sum -c -
+          aapt="$(find "$ANDROID_HOME/build-tools" -type f -name aapt | sort -V | tail -n 1)"
+          apksigner="$(find "$ANDROID_HOME/build-tools" -type f -name apksigner | sort -V | tail -n 1)"
+          "$aapt" dump badging "$work/verified.apk" > "$work/badging"
+          grep -Fq "package: name='com.seunghyun.bydautolock.test' versionCode='1043' versionName='01.01_02_R43'" "$work/badging"
+          "$apksigner" verify --verbose --print-certs "$work/verified.apk" > "$work/signer"
+          cat "$work/signer"
+          grep -Fiq 'Verified using v2 scheme (APK Signature Scheme v2): true' "$work/signer"
+          grep -Fiq '65637d09d45b6b05096c7831d92f65a039c6e3b06fdef6632601d7766ea05403' "$work/signer"
+          cp "$work/verified.apk" "$APK_PATH"
+      - name: Publish only the verified R43 binary
+        shell: bash
+        run: |
+          set -euo pipefail
+          echo "$APK_SHA  $APK_PATH" | sha256sum -c -
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add -- "$APK_PATH"
+          test "$(git diff --cached --name-only)" = "$APK_PATH"
+          git diff --cached --check
+          git commit -m 'Publish verified BYD ALB R43 QA APK binary [skip ci]'
+          git push origin HEAD:main
