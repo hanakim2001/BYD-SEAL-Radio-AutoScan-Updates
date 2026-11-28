@@ -3,9 +3,9 @@
   "channel": "QA",
   "status": "released",
   "updatedAt": "2026-11-28",
-  "versionCode": 1045,
-  "versionName": "01.01_02_R45",
-  "apkUrl": "https://raw.githubusercontent.com/hanakim2001/BYD-SEAL-Radio-AutoScan-Updates/main/byd-alb/BYD_ALB_01.01_02_R45.apk",
-  "sha256": "b10cc5503f8b93550ae3e82d137cb82badef77d8c1c8365bd2c86107293d1ee9",
-  "changes": "R45 QA: 삼성 루틴 잠금·해제 및 트렁크 열기 화면 미표시 수정. 기존 BLE·설정·키·서명 유지. 실차 루틴, 서버 차량정보 및 트렁크 닫힘 미확인."
+  "versionCode": 1046,
+  "versionName": "01.01_02_R46",
+  "apkUrl": "https://raw.githubusercontent.com/hanakim2001/BYD-SEAL-Radio-AutoScan-Updates/main/byd-alb/BYD_ALB_01.01_02_R46.apk",
+  "sha256": "2bf8eaee2093cd55ffbea79fe25b7e459da402f5398fdcad09b9e560c32269b0",
+  "changes": "R46 QA: 상시 감시 알림 자동 복구 옵션 추가(기본 OFF, 약 30초 확인 주기). 기존 R45 기능·BLE·설정·키·서명 유지. 실기기 알림, 서버 차량정보 및 트렁크 닫힘 미확인."
 }
