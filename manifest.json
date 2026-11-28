@@ -1,7 +1,7 @@
 {
-  "versionCode": 226,
+  "versionCode": 227,
   "versionName": "02.02",
-  "apkUrl": "https://raw.githubusercontent.com/hanakim2001/BYD-SEAL-Radio-AutoScan-Updates/main/BYD_SEAL_AUDIO_V02.02_CODE226.apk",
-  "sha256": "0816e4cf592ca0f5c739b0143f25e8721436492160b6829152304228d2200281",
-  "releaseNotes": "R11 code226 실차 시험판: SYSTEM 손가락 스크롤·밝기, MUSIC 한글 동작, iRADIO 목록·미리듣기·재생 소유권, WEB 로딩 복구, FM/BT 선택 및 HUD 재연결 개선. 주차 상태에서 시험. 기존 앱 삭제 금지. HUD/TURN·차량정보·실제 음량 및 순정 재생 미확인."
+  "apkUrl": "https://raw.githubusercontent.com/hanakim2001/BYD-SEAL-Radio-AutoScan-Updates/main/BYD_SEAL_AUDIO_V02.02_CODE227.apk",
+  "sha256": "e97a3b6d7eb9b28538752df9fa51589bb5c1a4657a92c54f59e85ea1866c833e",
+  "releaseNotes": "R12 code227 실차 시험판: TPMS 무효값 및 주행가능거리 조회 개선, WEB 시간초과·복구, iRADIO 미리듣기 소유권·출력 진단, HUD/TURN 응답 연동 개선. 주차 상태에서 시험. 기존 앱 삭제 금지. HUD/TURN·차량정보·실제 음량 및 순정 재생 미확인."
 }
